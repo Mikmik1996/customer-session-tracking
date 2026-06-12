@@ -15,7 +15,7 @@ app.use(express.static("frontend"));
 
 // ✅ FINAL WORKING VERSION
 
-const dbUrl = "mysql://root:mFEHOCBYWiLNyWmtQgFJqQjiKVOetrK@mysql.railway.internal:3306/railway";
+const dbUrl = "mysql://root:mfEHOcBYWiLNyWmtQgFJfqQjjKVOetrK@mysql.railway.internal:3306/railway";
 
 // ✅ optional safety check (you can keep or remove — both ok)
 if (!dbUrl) {
