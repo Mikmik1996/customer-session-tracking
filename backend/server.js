@@ -8,6 +8,9 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
+// ✅ SERVE FRONTEND
+app.use(express.static("frontend"));
+
 // ✅ DATABASE CONNECTION
 const pool = mysql.createPool({
   host: process.env.MYSQLHOST,
@@ -27,10 +30,6 @@ const pool = mysql.createPool({
     console.error("❌ MySQL connection failed:", err);
   }
 })();
-``
-
-// ✅ SERVE FRONTEND
-app.use(express.static("frontend"));
 
 /* ===========================
    ✅ LOGIN
@@ -56,13 +55,15 @@ app.post("/api/sessions", async (req, res) => {
       `INSERT INTO sessions 
       (client_name, client_contact, package_id, staff_id, start_time)
       VALUES (?, ?, ?, ?, NOW())`,
-      [client_name, client_contact, package_id, staff_id]
+      [client_name, client_contact, package_id, staff_id || 1]
     );
+
+    console.log("✅ Session created");
 
     res.json({ success: true });
 
   } catch (err) {
-    console.error("Add session error:", err);
+    console.error("❌ Add session error:", err);
     res.status(500).json({ error: "Server error" });
   }
 });
@@ -81,7 +82,7 @@ app.get("/api/sessions/active", async (req, res) => {
     res.json(rows);
 
   } catch (err) {
-    console.error(err);
+    console.error("❌ Active sessions error:", err);
     res.status(500).json({ error: "Server error" });
   }
 });
@@ -101,7 +102,7 @@ app.post("/api/sessions/:id/end", async (req, res) => {
     res.json({ success: true });
 
   } catch (err) {
-    console.error("End session error:", err);
+    console.error("❌ End session error:", err);
     res.status(500).json({ error: "Server error" });
   }
 });
@@ -127,7 +128,7 @@ app.get("/api/export", async (req, res) => {
     res.send(csv);
 
   } catch (err) {
-    console.error("Export error:", err);
+    console.error("❌ Export error:", err);
     res.status(500).json({ error: "Server error" });
   }
 });
@@ -154,13 +155,13 @@ app.get("/api/chart-data", async (req, res) => {
     res.json(rows);
 
   } catch (err) {
-    console.error("Chart error:", err);
+    console.error("❌ Chart error:", err);
     res.status(500).json({ error: "Server error" });
   }
 });
 
 /* ===========================
-   ✅ FRONTEND ROUTE
+   ✅ FRONTEND ROUTE (LAST)
 =========================== */
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "frontend/index.html"));
@@ -174,4 +175,4 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
-
+``
