@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 const express = require('express');
 const mysql = require('mysql2/promise');
 const cors = require('cors');
@@ -209,3 +210,176 @@ app.listen(PORT, () => {
   console.log(`📊 Frontend available at: Open frontend/index.html in browser`);
   console.log(`💾 Make sure MySQL is running and database is configured`);
 });
+=======
+const express = require("express");
+const mysql = require("mysql2/promise");
+const cors = require("cors");
+
+const app = express();
+
+app.use(express.json());
+app.use(cors());
+
+// ✅ DATABASE CONNECTION
+const pool = mysql.createPool({
+  host: "localhost",
+  user: "root",
+  password: "199605", // your password
+  database: "customer_tracking"
+});
+
+// ✅ SERVE FRONTEND
+app.use(express.static("../frontend"));
+
+/* ===========================
+   ✅ LOGIN
+=========================== */
+app.post("/api/login", (req, res) => {
+  const { username, password } = req.body;
+
+  if (username === "staff" && password === "123456") {
+    res.json({ success: true });
+  } else {
+    res.json({ success: false });
+  }
+});
+
+/* ===========================
+   ✅ ADD SESSION
+=========================== */
+app.post("/api/sessions", async (req, res) => {
+  try {
+    const { client_name, client_contact, package_id, staff_id } = req.body;
+
+    await pool.query(
+      `INSERT INTO sessions 
+      (client_name, client_contact, package_id, staff_id, start_time)
+      VALUES (?, ?, ?, ?, NOW())`,
+      [client_name, client_contact, package_id, staff_id]
+    );
+
+    res.json({ success: true });
+
+  } catch (err) {
+    console.error("Add session error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+/* ===========================
+   ✅ ACTIVE SESSIONS
+=========================== */
+app.get("/api/sessions/active", async (req, res) => {
+  try {
+    const [rows] = await pool.query(`
+      SELECT id, client_name, start_time, package_id
+      FROM sessions
+      WHERE end_time IS NULL
+    `);
+
+    res.json(rows);
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+``
+
+/* ===========================
+   ✅ END SESSION
+=========================== */
+app.post("/api/sessions/:id/end", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    await pool.query(
+      "UPDATE sessions SET end_time = NOW() WHERE id = ?",
+      [id]
+    );
+
+    res.json({ success: true });
+
+  } catch (err) {
+    console.error("End session error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+/* ===========================
+   ✅ EXPORT CSV
+=========================== */
+app.get("/api/export", async (req, res) => {
+  try {
+    const [rows] = await pool.query(`
+      SELECT client_name, client_contact, start_time, end_time
+      FROM sessions
+    `);
+
+    let csv = "Name,Contact,Start Time,End Time\n";
+
+    rows.forEach(row => {
+      csv += `${row.client_name},${row.client_contact},${row.start_time},${row.end_time || ""}\n`;
+    });
+
+    res.header("Content-Type", "text/csv");
+    res.attachment("report.csv");
+    res.send(csv);
+
+  } catch (err) {
+    console.error("Export error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+/* ===========================
+   ✅ ✅ FIXED CHART DATA (IMPORTANT)
+=========================== */
+app.get("/api/chart-data", async (req, res) => {
+  try {
+
+    const { start, end } = req.query;
+
+    let query = `
+      SELECT 
+        CASE 
+          WHEN package_id = 1 THEN '30 mins'
+          WHEN package_id = 2 THEN '1 hour'
+          WHEN package_id = 3 THEN '1.5 hours'
+          WHEN package_id = 4 THEN '2 hours'
+          ELSE 'Unlimited'
+        END AS package_name,
+        COUNT(*) AS count
+      FROM sessions
+    `;
+
+    const params = [];
+
+    // ✅ Date filter
+    if (start && end) {
+      query += " WHERE DATE(start_time) BETWEEN ? AND ?";
+      params.push(start, end);
+    }
+
+    query += " GROUP BY package_id";
+
+    const [rows] = await pool.query(query, params);
+
+    console.log("✅ Chart Data:", rows);
+
+    res.json(rows);
+
+  } catch (err) {
+    console.error("❌ Chart error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+/* ===========================
+   ✅ START SERVER
+=========================== */
+app.listen(3000, () => {
+  console.log("🚀 Server running at http://localhost:3000");
+});
+``
+>>>>>>> c718663 (add backend and frontend)
