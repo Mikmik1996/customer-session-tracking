@@ -15,21 +15,7 @@ app.use(express.static("frontend"));
 
 // ✅ DATABASE CONNECTION (FINAL)
 
-const mysql = require("mysql2/promise");
-
-const dbUrl = process.env.MYSQL_URL;
-
-const parsed = new URL(dbUrl);
-
-const pool = mysql.createPool({
-  host: parsed.hostname,
-  user: parsed.username,
-  password: parsed.password,
-  database: parsed.pathname.replace("/", ""),
-  port: parsed.port || 3306,
-});
-
-
+console.log("MYSQL_URL VALUE:", process.env.MYSQL_URL);
 console.log("DB HOST:", process.env.MYSQLHOST);
 
 // ✅ TEST DATABASE CONNECTION (safe)
