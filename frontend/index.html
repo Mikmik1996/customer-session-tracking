@@ -1,254 +1,130 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-<<<<<<< HEAD
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Customer Session Tracking</title>
-  <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-  <!-- Login Page -->
-  <div id="loginPage" class="page">
-    <div class="login-container">
-      <h1>Park Session Tracker</h1>
-      <form id="loginForm">
-        <div class="form-group">
-          <label for="username">Username</label>
-          <input type="text" id="username" required>
-        </div>
-        <div class="form-group">
-          <label for="password">Password</label>
-          <input type="password" id="password" required>
-        </div>
-        <button type="submit" class="btn btn-primary">Login</button>
-        <p class="demo-info">Demo: username: <strong>staff</strong> | password: <strong>123456</strong></p>
-      </form>
-    </div>
-  </div>
+<meta charset="UTF-8">
+<title>Wiijum Philippines</title>
 
-  <!-- Main Dashboard -->
-  <div id="mainPage" class="page" style="display: none;">
-    <div class="navbar">
-      <h1>🎪 Park Session Tracking</h1>
-      <div class="navbar-right">
-        <span id="staffName"></span>
-        <button onclick="logout()" class="btn btn-danger">Logout</button>
-      </div>
-    </div>
+<style>
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: url('images/bg.jpg') no-repeat center center/cover;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: opacity 0.5s ease;
+}
 
-    <div class="container">
-      <!-- Statistics Section -->
-      <div class="stats-section">
-        <div class="stat-card">
-          <h3>People Inside</h3>
-          <p id="peopleInside" class="stat-number">0</p>
-        </div>
-        <div class="stat-card">
-          <h3>Active Sessions</h3>
-          <p id="activeSessions" class="stat-number">0</p>
-        </div>
-        <div class="stat-card">
-          <h3>Total Sessions</h3>
-          <p id="totalSessions" class="stat-number">0</p>
-        </div>
-      </div>
+.login-container {
+  background: #7fb3d5;
+  padding: 50px;
+  border-radius: 20px;
+  width: 400px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: 0 15px 30px rgba(0,0,0,0.3);
+}
 
-      <!-- Create Session Section -->
-      <div class="section">
-        <h2>Create New Session</h2>
-        <form id="sessionForm">
-          <div class="form-row">
-            <div class="form-group">
-              <label for="clientName">Client Name</label>
-              <input type="text" id="clientName" required>
-            </div>
-            <div class="form-group">
-              <label for="clientContact">Contact Number</label>
-              <input type="tel" id="clientContact" required>
-            </div>
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label for="packageSelect">Package</label>
-              <select id="packageSelect" required>
-                <option value="">Select a package</option>
-              </select>
-            </div>
-            <button type="submit" class="btn btn-primary">Start Session</button>
-          </div>
-        </form>
-      </div>
+.login-container h1 {
+  margin-bottom: 30px;
+}
 
-      <!-- Tabs -->
-      <div class="tabs">
-        <button class="tab-btn active" onclick="switchTab('active')">Active Sessions</button>
-        <button class="tab-btn" onclick="switchTab('all')">All Sessions</button>
-      </div>
+.login-container form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
 
-      <!-- Active Sessions -->
-      <div id="activeTab" class="tab-content active">
-        <h2>Active Sessions</h2>
-        <div id="activeSesionsList" class="sessions-list"></div>
-      </div>
+.login-container input {
+  width: 85%;
+  padding: 14px;
+  margin: 12px 0;
+  border-radius: 10px;
+  border: none;
+  font-size: 16px;
+  text-align: center;
+}
 
-      <!-- All Sessions -->
-      <div id="allTab" class="tab-content" style="display: none;">
-        <h2>All Sessions (Dashboard & Report)</h2>
-        <div id="allSessionsList" class="sessions-list"></div>
-      </div>
-    </div>
-  </div>
+.login-container button {
+  width: 85%;
+  padding: 14px;
+  margin-top: 15px;
+  border: none;
+  border-radius: 10px;
+  background: #1c7ed6;
+  color: white;
+  font-size: 18px;
+  cursor: pointer;
+}
 
-  <script src="script.js"></script>
-</body>
-</html>
-=======
-  <title>Wiijum Philippines</title>
+.login-container button:hover {
+  background: #1864ab;
+}
 
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-
-      background: url('images/bg.jpg') no-repeat center center/cover;
-
-      height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-
-      /* ✅ for fade effect */
-      transition: opacity 0.5s ease;
-    }
-
-    /* ✅ LOGIN BOX */
-    .login-container {
-      background: #7fb3d5; /* darker blue */
-      padding: 50px;
-      border-radius: 20px;
-      width: 400px;
-
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-
-      box-shadow: 0 15px 30px rgba(0,0,0,0.3);
-    }
-
-    /* ✅ TITLE */
-    .login-container h1 {
-      margin-bottom: 30px;
-      text-align: center;
-    }
-
-    /* ✅ FORM FIX */
-    .login-container form {
-      width: 100%;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-
-    /* ✅ INPUTS */
-    .login-container input {
-      width: 85%;
-      padding: 14px;
-      margin: 12px 0;
-
-      border-radius: 10px;
-      border: none;
-      font-size: 16px;
-
-      text-align: center;
-      background: #f1f1f1;
-    }
-
-    /* ✅ BUTTON */
-    .login-container button {
-      width: 85%;
-      padding: 14px;
-      margin-top: 15px;
-
-      border: none;
-      border-radius: 10px;
-      background: #1c7ed6;
-      color: white;
-      font-size: 18px;
-      cursor: pointer;
-    }
-
-    .login-container button:hover {
-      background: #1864ab;
-    }
-
-    /* ✅ FADE OUT EFFECT */
-    .fade-out {
-      opacity: 0;
-    }
-  </style>
+.fade-out {
+  opacity: 0;
+}
+</style>
 </head>
 
 <body>
 
-  <div class="login-container">
+<div class="login-container">
 
-    <h1>🎯 Wiijum Philippines</h1>
+  <h1>🎯 Wiijum Philippines</h1>
 
-    <form onsubmit="login(event)">
-      <input type="text" id="username" placeholder="Username" required>
+  <form onsubmit="login(event)">
+    <input type="text" id="username" placeholder="Username" required>
+    <input type="password" id="password" placeholder="Password" required>
+    <button type="submit" id="loginBtn">Login</button>
+  </form>
 
-      <!-- ✅ PASSWORD HIDDEN -->
-      <input type="password" id="password" placeholder="Password" required>
+</div>
 
-      <button type="submit" id="loginBtn">Login</button>
-    </form>
+<script>
+async function login(e) {
+  e.preventDefault();
 
-  </div>
+  const btn = document.getElementById("loginBtn");
+  btn.innerText = "Logging in...";
+  btn.disabled = true;
 
-  <script>
-    async function login(e) {
-      e.preventDefault();
+  const username = document.getElementById("username").value;
+  const password = document.getElementById("password").value;
 
-      const btn = document.getElementById("loginBtn");
-      btn.innerText = "Logging in...";
-      btn.disabled = true;
+  try {
+    const res = await fetch("/api/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password })
+    });
 
-      const username = document.getElementById("username").value;
-      const password = document.getElementById("password").value;
+    const data = await res.json();
 
-      try {
-        const res = await fetch("/api/login", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ username, password })
-        });
+    if (data.success) {
+      document.body.classList.add("fade-out");
 
-        const data = await res.json();
+      setTimeout(() => {
+        window.location.href = "dashboard.html";
+      }, 500);
 
-        if (data.success) {
-          // ✅ fade out animation
-          document.body.classList.add("fade-out");
-
-          setTimeout(() => {
-            window.location.href = "dashboard.html";
-          }, 500);
-
-        } else {
-          alert("Invalid login");
-          btn.innerText = "Login";
-          btn.disabled = false;
-        }
-
-      } catch (error) {
-        alert("Server error");
-        btn.innerText = "Login";
-        btn.disabled = false;
-      }
+    } else {
+      alert("Invalid login (use staff / 123456)");
+      btn.innerText = "Login";
+      btn.disabled = false;
     }
-  </script>
+
+  } catch (error) {
+    alert("Server error");
+    btn.innerText = "Login";
+    btn.disabled = false;
+  }
+}
+</script>
 
 </body>
 </html>
 
->>>>>>> c718663 (add backend and frontend)
