@@ -1,3 +1,4 @@
+// 🔥 MUST BE AT TOP
 console.log("🔥 BACKEND FILE IS RUNNING 🔥");
 
 const express = require("express");
@@ -9,18 +10,19 @@ const app = express();
 
 app.use(express.json());
 app.use(cors());
-
-// ✅ SERVE FRONTEND
 app.use(express.static("frontend"));
 
 
-// ✅ DATABASE CONNECTION (MUST COME FIRST)
+// ✅ DATABASE CONNECTION (GLOBAL — NO BLOCK!)
 const dbUrl = process.env.MYSQL_URL;
 
 if (!dbUrl) {
   throw new Error("❌ MYSQL_URL is missing from environment variables");
 }
+
 const parsed = new URL(dbUrl);
+
+// ✅ THIS MUST NOT BE INSIDE ANY FUNCTION OR BLOCK
 const pool = mysql.createPool({
   host: parsed.hostname,
   user: parsed.username,
@@ -29,7 +31,8 @@ const pool = mysql.createPool({
   port: parsed.port || 3306,
 });
 
-// ✅ ROUTES (AFTER DB)
+
+// ✅ ROUTES (AFTER pool exists)
 app.get("/api/sessions/active", async (req, res) => {
   try {
     const [rows] = await pool.query(`
@@ -45,7 +48,8 @@ app.get("/api/sessions/active", async (req, res) => {
   }
 });
 
-// ✅ TEST DATABASE CONNECTION (safe)
+
+// ✅ TEST CONNECTION (OPTIONAL BUT SAFE)
 (async () => {
   try {
     const conn = await pool.getConnection();
@@ -55,6 +59,7 @@ app.get("/api/sessions/active", async (req, res) => {
     console.error("❌ MySQL connection failed:", err);
   }
 })();
+``
 
 /* ===========================
    ✅ LOGIN
