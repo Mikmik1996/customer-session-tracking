@@ -13,7 +13,7 @@ app.use(express.static("frontend"));
 
 
 // ✅ DATABASE CONNECTION (FINAL)
-const pool = mysql.createPool(process.env.MYSQL_URL);
+console.log("NEW BUILD RUNNING ✅");
 
 
 
