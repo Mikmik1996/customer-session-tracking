@@ -1,6 +1,7 @@
 const express = require("express");
 const mysql = require("mysql2/promise");
 const cors = require("cors");
+const path = require("path");
 
 const app = express();
 
@@ -16,7 +17,7 @@ const pool = mysql.createPool({
 });
 
 // ✅ SERVE FRONTEND
-app.use(express.static("../frontend"));
+app.use(express.static("frontend"));
 
 /* ===========================
    ✅ LOGIN
@@ -146,6 +147,13 @@ app.get("/api/chart-data", async (req, res) => {
 });
 
 /* ===========================
+   ✅ FRONTEND ROUTE
+=========================== */
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "frontend/index.html"));
+});
+
+/* ===========================
    ✅ START SERVER
 =========================== */
 const PORT = process.env.PORT || 3000;
@@ -153,3 +161,4 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
+
