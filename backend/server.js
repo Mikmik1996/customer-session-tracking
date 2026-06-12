@@ -10,8 +10,6 @@ app.use(cors());
 
 // ✅ DATABASE CONNECTION
 const pool = mysql.createPool({
-
-const pool = mysql.createPool({
   host: process.env.MYSQLHOST,
   user: process.env.MYSQLUSER,
   password: process.env.MYSQLPASSWORD,
@@ -19,6 +17,17 @@ const pool = mysql.createPool({
   port: process.env.MYSQLPORT
 });
 
+// ✅ TEST DATABASE CONNECTION (safe)
+(async () => {
+  try {
+    const conn = await pool.getConnection();
+    console.log("✅ Connected to MySQL");
+    conn.release();
+  } catch (err) {
+    console.error("❌ MySQL connection failed:", err);
+  }
+})();
+``
 
 // ✅ SERVE FRONTEND
 app.use(express.static("frontend"));
