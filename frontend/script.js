@@ -1,9 +1,8 @@
-/* =======================
-   ✅ SIDEBAR FUNCTIONS
-======================= */
-
 console.log("✅ SCRIPT LOADED");
 
+/* =======================
+   ✅ SIDEBAR
+======================= */
 function showSection(id) {
   document.querySelectorAll(".section").forEach(section => {
     section.classList.remove("active");
@@ -30,45 +29,68 @@ function logout() {
 }
 
 /* =======================
-   ✅ ADD SESSION
+   ✅ ADD SESSION (FIXED)
 ======================= */
-
 async function addSession() {
   const name = document.getElementById("name").value;
   const contact = document.getElementById("contact").value;
   const package_id = document.getElementById("package").value;
 
-  await fetch("/api/sessions", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      client_name: name,
-      client_contact: contact,
-      package_id,
-      staff_id: 1
-    })
-  });
+  try {
+    const res = await fetch("/api/sessions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        client_name: name,
+        client_contact: contact,
+        package_id,
+        staff_id: 1
+      })
+    });
 
-  const msg = document.getElementById("msg");
-  msg.innerText = "✅ Session added!";
-  msg.style.opacity = "1";
+    const data = await res.json();
 
-  document.getElementById("name").value = "";
-  document.getElementById("contact").value = "";
-  document.getElementById("package").value = "";
+    if (data.success) {
+      console.log("✅ Session saved");
 
-  setTimeout(() => {
-    msg.style.opacity = "0";
-  }, 2000);
+      // ✅ VERY IMPORTANT (MAIN FIX)
+      loadSessions();
+
+      const msg = document.getElementById("msg");
+      msg.innerText = "✅ Session added!";
+      msg.style.opacity = "1";
+
+      document.getElementById("name").value = "";
+      document.getElementById("contact").value = "";
+      document.getElementById("package").value = "";
+
+      setTimeout(() => {
+        msg.style.opacity = "0";
+      }, 2000);
+
+    } else {
+      alert("❌ Failed to add session");
+    }
+
+  } catch (err) {
+    console.error("❌ Add session error:", err);
+  }
 }
 
 /* =======================
    ✅ DASHBOARD
 ======================= */
-
 async function loadSessions() {
   try {
     const res = await fetch("/api/sessions/active");
+
+    if (!res.ok) {
+      console.error("❌ API error:", res.status);
+      return;
+    }
+
     const data = await res.json();
 
     let html = "";
@@ -137,14 +159,13 @@ async function loadSessions() {
     document.getElementById("tableBody").innerHTML = html;
 
   } catch (err) {
-    console.error(err);
+    console.error("❌ Load sessions error:", err);
   }
 }
 
 /* =======================
    ✅ REMOVE SESSION
 ======================= */
-
 async function removeSession(id) {
   await fetch(`/api/sessions/${id}/end`, { method: "POST" });
   loadSessions();
@@ -153,7 +174,6 @@ async function removeSession(id) {
 /* =======================
    ✅ CHART
 ======================= */
-
 let chart;
 
 async function loadChart() {
@@ -188,7 +208,6 @@ async function loadChart() {
 /* =======================
    ✅ EXPORT
 ======================= */
-
 function downloadCSV() {
   window.location.href = "/api/export";
 }
@@ -196,7 +215,5 @@ function downloadCSV() {
 /* =======================
    ✅ AUTO LOAD
 ======================= */
-
-setInterval(loadSessions, 1000);
+setInterval(loadSessions, 2000);
 loadSessions();
-
