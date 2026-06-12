@@ -17,7 +17,15 @@ app.use(express.static("frontend"));
 
 // ✅ DATABASE CONNECTION (FINAL)
 
-const parsed = new URL(process.env.MYSQL_URL);
+
+const dbUrl = process.env.MYSQL_URL;
+
+if (!dbUrl) {
+  throw new Error("❌ MYSQL_URL is missing from environment variables");
+}
+
+const parsed = new URL(dbUrl);
+
 const pool = mysql.createPool({
   host: parsed.hostname,
   user: parsed.username,
