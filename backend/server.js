@@ -14,26 +14,36 @@ app.use(cors());
 app.use(express.static("frontend"));
 
 
-
-// ✅ DATABASE CONNECTION (FINAL)
-
-
+// ✅ DATABASE CONNECTION (MUST COME FIRST)
 const dbUrl = process.env.MYSQL_URL;
 
 if (!dbUrl) {
   throw new Error("❌ MYSQL_URL is missing from environment variables");
 }
-
 const parsed = new URL(dbUrl);
-
 const pool = mysql.createPool({
   host: parsed.hostname,
   user: parsed.username,
   password: parsed.password,
   database: parsed.pathname.replace("/", ""),
   port: parsed.port || 3306,
-})
+});
 
+// ✅ ROUTES (AFTER DB)
+app.get("/api/sessions/active", async (req, res) => {
+  try {
+    const [rows] = await pool.query(`
+      SELECT id, client_name, start_time, package_id
+      FROM sessions
+      WHERE end_time IS NULL
+    `);
+
+    res.json(rows);
+  } catch (err) {
+    console.error("Active sessions error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
 
 // ✅ TEST DATABASE CONNECTION (safe)
 (async () => {
