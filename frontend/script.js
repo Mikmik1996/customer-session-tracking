@@ -45,7 +45,7 @@ async function addSession() {
       body: JSON.stringify({
         client_name: name,
         client_contact: contact,
-        package_id,
+        package_id: parseInt(package_id),
         staff_id: 1
       })
     });
