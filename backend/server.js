@@ -1,3 +1,5 @@
+console.log("🔥 BACKEND FILE IS RUNNING 🔥");
+
 const express = require("express");
 const mysql = require("mysql2/promise");
 const cors = require("cors");
