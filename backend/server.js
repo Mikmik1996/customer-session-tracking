@@ -13,12 +13,15 @@ app.use(cors());
 app.use(express.static("frontend"));
 
 
-// ✅ DATABASE CONNECTION (GLOBAL — NO BLOCK!)
-const dbUrl = process.env.MYSQL_URL;
+// ✅ FINAL WORKING VERSION
 
+const dbUrl = "mysql://root:mFEHOCBYWiLNyWmtQgFJqQjiKVOetrK@mysql.railway.internal:3306/railway";
+
+// ✅ optional safety check (you can keep or remove — both ok)
 if (!dbUrl) {
-  throw new Error("❌ MYSQL_URL is missing from environment variables");
+  console.error("❌ MYSQL_URL is missing");
 }
+``
 
 const parsed = new URL(dbUrl);
 
