@@ -12,9 +12,22 @@ app.use(cors());
 app.use(express.static("frontend"));
 
 
-// ✅ DATABASE CONNECTION (FINAL)
-console.log("NEW BUILD RUNNING ✅");
 
+// ✅ DATABASE CONNECTION (FINAL)
+
+const mysql = require("mysql2/promise");
+
+const dbUrl = process.env.MYSQL_URL;
+
+const parsed = new URL(dbUrl);
+
+const pool = mysql.createPool({
+  host: parsed.hostname,
+  user: parsed.username,
+  password: parsed.password,
+  database: parsed.pathname.replace("/", ""),
+  port: parsed.port || 3306,
+});
 
 
 console.log("DB HOST:", process.env.MYSQLHOST);
