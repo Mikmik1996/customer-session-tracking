@@ -23,16 +23,15 @@ if (!dbUrl) {
 }
 ``
 
-const parsed = new URL(dbUrl);
-
-// ✅ THIS MUST NOT BE INSIDE ANY FUNCTION OR BLOCK
+// ✅ DATABASE CONNECTION (FINAL)
 const pool = mysql.createPool({
-  host: parsed.hostname,
-  user: parsed.username,
-  password: parsed.password,
-  database: parsed.pathname.replace("/", ""),
-  port: parsed.port || 3306,
+  host: process.env.MYSQLHOST,
+  user: process.env.MYSQLUSER,
+  password: process.env.MYSQLPASSWORD,
+  database: process.env.MYSQLDATABASE,
+  port: process.env.MYSQLPORT
 });
+
 
 
 // ✅ ROUTES (AFTER pool exists)
