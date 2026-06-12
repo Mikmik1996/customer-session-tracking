@@ -10,11 +10,15 @@ app.use(cors());
 
 // ✅ DATABASE CONNECTION
 const pool = mysql.createPool({
-  host: "localhost",
-  user: "root",
-  password: "199605",
-  database: "customer_tracking"
+
+const pool = mysql.createPool({
+  host: process.env.MYSQLHOST,
+  user: process.env.MYSQLUSER,
+  password: process.env.MYSQLPASSWORD,
+  database: process.env.MYSQLDATABASE,
+  port: process.env.MYSQLPORT
 });
+
 
 // ✅ SERVE FRONTEND
 app.use(express.static("frontend"));
