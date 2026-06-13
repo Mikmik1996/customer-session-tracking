@@ -7,23 +7,13 @@ const cors = require("cors");
 const path = require("path");
 
 const app = express();
-
 app.use(express.json());
 app.use(cors());
 app.use(express.static("frontend"));
 
 
-// ✅ FINAL WORKING VERSION
-
-const dbUrl = "mysql://root:mFEHOCBYWiLNyWmtQgFJfqQjjKVOetrK@thomas.proxy.rlwy.net:38706/railway";
-
-// ✅ optional safety check (you can keep or remove — both ok)
-if (!dbUrl) {
-  console.error("❌ MYSQL_URL is missing");
-}
-``
-
 // ✅ DATABASE CONNECTION (FINAL)
+
 const pool = mysql.createPool({
   host: process.env.MYSQLHOST,
   user: process.env.MYSQLUSER,
