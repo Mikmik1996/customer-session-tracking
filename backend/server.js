@@ -12,16 +12,15 @@ app.use(cors());
 app.use(express.static("frontend"));
 
 
-// ✅ DATABASE CONNECTION (FINAL)
-
-
+// ✅ DATABASE CONNECTION (DYNAMIC)
 const pool = mysql.createPool({
-  host: process.env.MYSQLHOST,
-  user: process.env.MYSQLUSER,
-  password: process.env.MYSQLPASSWORD,
-  database: process.env.MYSQLDATABASE,
-  port: Number(process.env.MYSQLPORT),
+  host: process.env.MYSQLHOST || "mysql.railway.internal",
+  user: process.env.MYSQLUSER || "root",
+  password: process.env.MYSQLPASSWORD || "mfEHOcBYWiLNyWmtQgFJfqQjjKVOetrK", // fallback for local testing
+  database: process.env.MYSQLDATABASE || "railway",
+  port: parseInt(process.env.MYSQLPORT || "3306")
 });
+
 
 
 
