@@ -21,116 +21,72 @@
       background-size: cover;
     }
 
+    
+.login-container {
+  background: rgba(255, 255, 255, 0.95);
+  padding: 40px;
+  border-radius: 20px;
+  width: 400px; /* ✅ slightly wider */
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+  backdrop-filter: blur(8px);
+}
+
 .login-container form {
   display: flex;
   flex-direction: column;
-  align-items: center;  
+  align-items: center;
   width: 100%;
 }
-``
 
-    .login-container {
-      background: rgba(255, 255, 255, 0.95);
-      padding: 40px;
-      border-radius: 20px;
-      width: 360px;
-      text-align: center;
-
-      backdrop-filter: blur(10px);
-      box-shadow: 0 20px 40px rgba(0,0,0,0.3);
-
-      animation: fadeIn 0.6s ease;
-    }
-
-    @keyframes fadeIn {
-      from { transform: translateY(20px); opacity: 0; }
-      to { transform: translateY(0); opacity: 1; }
-    }
-
-    .login-container h2 {
-      margin: 0;
-      font-size: 26px;
-      color: #1c4fa3;
-      white-space: nowrap;
-    }
-
-    .subtitle {
-      font-size: 13px;
-      color: #555;
-      margin-bottom: 25px;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-    }
-
-    .login-container input {
-      width: 85%;
-      padding: 14px;
-      margin: 10px 0;
-      border-radius: 10px;
-      border: 1px solid #ccc;
-      font-size: 15px;
-      outline: none;
-      transition: 0.25s;
-    }
-
-
-.password-wrapper {
-  position: relative;
-  width: 85%;
+/* ✅ ALL elements same width */
+.login-container input,
+.password-wrapper,
+.login-container button {
+  width: 100%;
 }
 
+/* ✅ REMOVE duplicate, keep ONLY this */
+.password-wrapper {
+  position: relative;
+}
 
-    .login-container input:focus {
-      border-color: #1c7ed6;
-      box-shadow: 0 0 8px rgba(28,126,214,0.3);
-    }
+/* ✅ Inputs */
+.login-container input {
+  padding: 14px;
+  margin: 12px 0; /* ✅ spacing improved */
+  border-radius: 10px;
+  border: 1px solid #ccc;
+  font-size: 15px;
+  outline: none;
+}
 
-    /* Password container */
-    .password-wrapper {
-      position: relative;
-      width: 100%;
-    }
+.login-container input:focus {
+  border-color: #1c7ed6;
+  box-shadow: 0 0 8px rgba(28,126,214,0.3);
+}
 
-    .toggle-password {
-      position: absolute;
-      right: 12px;
-      top: 50%;
-      transform: translateY(-50%);
-      cursor: pointer;
-      font-size: 14px;
-      color: #666;
-      user-select: none;
-    }
+/* ✅ Toggle */
+.toggle-password {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  font-size: 14px;
+  color: #666;
+}
 
-    .login-container button {
-      width: 100%;
-      padding: 14px;
-      margin-top: 15px;
-      border: none;
-      border-radius: 10px;
-      background: linear-gradient(135deg, #1c7ed6, #339af0);
-      color: white;
-      font-size: 16px;
-      font-weight: bold;
-      cursor: pointer;
-      transition: 0.3s;
-    }
-
-    .login-container button:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 20px rgba(0,0,0,0.2);
-      background: linear-gradient(135deg, #1864ab, #228be6);
-    }
-
-    .login-container button:disabled {
-      opacity: 0.7;
-      cursor: not-allowed;
-    }
-
-    .fade-out {
-      opacity: 0;
-      transition: opacity 0.5s ease;
-    }
+/* ✅ Button */
+.login-container button {
+  margin-top: 15px;
+  padding: 14px;
+  border-radius: 10px;
+}
   </style>
 </head>
 
