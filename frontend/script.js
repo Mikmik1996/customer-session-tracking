@@ -121,7 +121,7 @@ async function loadSessions() {
       const start = new Date(s.start_time);
       const now = new Date();
 
-      // ✅ FIXED: Using type-safe parsing and switch evaluation matrix blocks
+      // Explicit type casting to safe-guard switch evaluations
       const packageId = Number(s.package_id);
       let duration = 30;
 
@@ -130,11 +130,11 @@ async function loadSessions() {
         case 2: duration = 60;  break;
         case 3: duration = 90;  break;
         case 4: duration = 120; break;
-        case 5: duration = 999; break; // Unlimited designation
+        case 5: duration = 999; break; // Unlimited package tracking assignment
         default: duration = 30;  break;
       }
 
-      // Calculate time delta countdown states
+      // Calculate real-time dynamic remaining time metric values
       let remain = (duration * 60) - ((now - start) / 1000);
       if (remain < 0) remain = 0;
 
@@ -160,10 +160,10 @@ async function loadSessions() {
         timeOut = "Unlimited";
       }
 
-      // Style flags setup metrics
+      // Style flags assignment mapping metrics
       let color = "normal";
       if (remain <= 0) color = "expired";
-      else if (remain <= 300) color = "warning"; // Under 5 minutes remaining
+      else if (remain <= 300) color = "warning"; // Under 5 minutes remaining status flags
 
       html += `
         <tr>
@@ -270,35 +270,38 @@ function downloadCSV() {
 /* ==========================================
    🚦 ROUTER BOOTSTRAPPING ENGINE ON LOAD
 ========================================== */
-// Background refresher execution engine loop block setup
+// Background real-time table sync loop ticker (every 2 seconds)
 setInterval(loadSessions, 2000);
 
 function initializeDashboardRouting() {
   console.log("🚦 Initializing application view routing router systems...");
   
-  // Fire off primary table tracking engine initialization fetch query pass execution
+  // Fire off initial operational dashboard sync query pass
   loadSessions();
 
-  // ✅ ENHANCED SMART ROUTING: Auto-reads whatever navigation path is specified inside the url string 
-  const currentHash = window.location.hash; // e.g., "#dashboard", "#reports", or "#registration"
+  // Read current address window location reference hash tag parsing routing elements
+  const currentHash = window.location.hash; // e.g., "#dashboard", "#reports"
   
   if (currentHash) {
     const sectionTargetId = currentHash.replace("#", "");
     
-    // Unhide the appropriate application viewport panel canvas dynamically right now
+    // Unhide the target UI view canvas block pane
     showSection(sectionTargetId);
 
-    // Auto-highlight corresponding sidebar action item container frame link context elements
+    // Auto-highlight matching active layout sidebar navigation link buttons
     const linkedMenuButton = document.querySelector(`.sidebar .menu button[onclick*="${sectionTargetId}"]`);
     if (linkedMenuButton) {
       setActive(linkedMenuButton);
     }
     console.log(`🔓 Workspace interface mapped successfully to view path section item: [${sectionTargetId}]`);
   } else {
-    // Standard initialization fallback
+    // Normal structural default system fallback placement maps
     showSection("registration");
   }
 }
 
-// Spark up router subsystem mappings execution right now 
-initializeDashboardRouting();
+// ✅ DOM WRAPPER GUARD: Holds execution securely until HTML nodes are rendered completely!
+document.addEventListener("DOMContentLoaded", () => {
+  console.log("DOM fully loaded and parsed. Safe to boot interface elements.");
+  initializeDashboardRouting();
+});
