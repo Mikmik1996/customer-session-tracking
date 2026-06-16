@@ -11,20 +11,23 @@ app.use(express.json());
 app.use(cors());
 app.use(express.static(path.join(__dirname, "../frontend")));
 
-// ✅ DATABASE CONNECTION (DYNAMIC)
+// ✅ DATABASE CONNECTION (CORRECTED PRODUCTION ENV PRIORITIZATION)
 const pool = mysql.createPool({
-  host: process.env.MYSQLHOST || "mysql.railway.internal",
+  host: process.env.MYSQLHOST || "127.0.0.1",
   user: process.env.MYSQLUSER || "root",
-  password: process.env.MYSQLPASSWORD || "mfEHOcBYWiLNyWmtQgFJfqQjjKVOetrK", // fallback for local testing
+  password: process.env.MYSQLPASSWORD || "mfEHOcBYWiLNyWmtQgFJfqQjjKVOetrK", 
   database: process.env.MYSQLDATABASE || "railway",
-  port: parseInt(process.env.MYSQLPORT || "3306")
+  port: parseInt(process.env.MYSQLPORT || "3306"),
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0
 });
 
 // ✅ TEST CONNECTION (OPTIONAL BUT SAFE)
 (async () => {
   try {
     const conn = await pool.getConnection();
-    console.log("✅ Connected to MySQL");
+    console.log("✅ Connected to MySQL Database Server Successfully.");
     conn.release();
   } catch (err) {
     console.error("❌ MySQL connection failed:", err);
@@ -107,7 +110,7 @@ app.post("/api/sessions/:id/end", async (req, res) => {
 });
 
 /* ===========================
-   ✅ EXPORT CSV (CLEANED & WRAPPED IN STRINGS)
+   ✅ EXPORT CSV (FIXED & FORMATTED FOR ASIA/MANILA)
 =========================== */
 app.get("/api/export", async (req, res) => {
   try {
@@ -128,7 +131,6 @@ app.get("/api/export", async (req, res) => {
       else if (row.package_id == 4) { packageName = "2 hours"; durationMins = 120; }
       else if (row.package_id == 5) { packageName = "Unlimited"; durationMins = 999; }
 
-      // Force standard string formatting using Manila timezone
       const dateString = startDate.toLocaleDateString("en-PH", {
         timeZone: "Asia/Manila",
         year: "numeric",
@@ -165,11 +167,10 @@ app.get("/api/export", async (req, res) => {
         });
       }
 
-      // Prepend an apostrophe/quote modifier to prevent Excel Scientific notation corruption
       return {
         date: dateString,
         name: row.client_name || "N/A",
-        contact: row.client_contact ? `'\t${row.client_contact}` : "N/A", // Hidden tab literal stops Excel formatting breakage
+        contact: row.client_contact ? row.client_contact : "N/A",
         package: packageName,
         start: startTimeString,
         end: endTimeString
@@ -180,16 +181,25 @@ app.get("/api/export", async (req, res) => {
     let csvContent = headers.join(",") + "\n";
 
     cleanedRows.forEach(r => {
+      // Force double quotes to prevent spreadsheet formatting engines from reading commas as column breaks
+      const cleanName = String(r.name).replace(/"/g, '""');
+      const cleanContact = String(r.contact).replace(/"/g, '""');
+      
       const line = [
         `"${r.date}"`,
-        `"${r.name.replace(/"/g, '""')}"`,
-        `"${r.contact}"`,
+        `"${cleanName}"`,
+        `"${cleanContact}"`,
         `"${r.package}"`,
         `"${r.start}"`,
         `"${r.end}"`
       ].join(",");
       csvContent += line + "\n";
     });
+
+    // Anti-caching instructions for web browsers
+    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Expires", "0");
 
     res.header("Content-Type", "text/csv");
     res.attachment("session_report.csv");
@@ -200,6 +210,7 @@ app.get("/api/export", async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 });
+
 /* ===========================
    ✅ CHART DATA
 =========================== */
