@@ -51,7 +51,7 @@ function logout() {
 }
 
 /* =======================
-   ✅ ADD SESSION
+   ✅ ADD SESSION (UPDATED FOR INSTANT REFRESH)
 ======================= */
 async function addSession() {
   const name = document.getElementById("name").value;
@@ -77,15 +77,18 @@ async function addSession() {
     if (data.success) {
       console.log("✅ Session saved");
 
-      loadSessions();
-
-      const msg = document.getElementById("msg");
-      msg.innerText = "✅ Session added!";
-      msg.style.opacity = "1";
-
+      // 1. CLEAR input fields immediately so the UI feels responsive
       document.getElementById("name").value = "";
       document.getElementById("contact").value = "";
       document.getElementById("package").value = "";
+
+      // 2. FORCE an immediate table reload right now (Fixes the 2-second jump!)
+      await loadSessions();
+
+      // 3. Show success banner
+      const msg = document.getElementById("msg");
+      msg.innerText = "✅ Session added!";
+      msg.style.opacity = "1";
 
       setTimeout(() => {
         msg.style.opacity = "0";
