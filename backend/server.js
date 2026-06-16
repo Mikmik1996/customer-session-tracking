@@ -11,19 +11,32 @@ app.use(express.json());
 app.use(cors());
 app.use(express.static(path.join(__dirname, "../frontend")));
 
-// ✅ DATABASE CONNECTION (PRODUCTION + LOCAL COMPATIBLE)
+// ✅ DATABASE CONNECTION (DYNAMIC PRODUCTION ENVIRONMENT MAPPING)
 let pool;
+
 if (process.env.MYSQL_URL) {
-  console.log("Connecting using production MYSQL_URL...");
+  console.log("Connecting via production MYSQL_URL connection string...");
   pool = mysql.createPool(process.env.MYSQL_URL);
-} else {
-  console.log("Connecting using local configuration fallback...");
+} else if (process.env.MYSQLHOST || process.env.MYSQL_HOST) {
+  console.log("Connecting via production separated environment variables...");
   pool = mysql.createPool({
-    host: process.env.MYSQLHOST || "127.0.0.1",
-    user: process.env.MYSQLUSER || "root",
-    password: process.env.MYSQLPASSWORD || "mfEHOcBYWiLNyWmtQgFJfqQjjKVOetrK", 
-    database: process.env.MYSQLDATABASE || "railway",
-    port: parseInt(process.env.MYSQLPORT || "3306"),
+    host: process.env.MYSQLHOST || process.env.MYSQL_HOST,
+    user: process.env.MYSQLUSER || process.env.MYSQL_USER,
+    password: process.env.MYSQLPASSWORD || process.env.MYSQL_PASSWORD,
+    database: process.env.MYSQLDATABASE || process.env.MYSQL_DATABASE,
+    port: parseInt(process.env.MYSQLPORT || process.env.MYSQL_PORT || "3306"),
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0
+  });
+} else {
+  console.log("Connecting using local machine localhost fallback configuration...");
+  pool = mysql.createPool({
+    host: "127.0.0.1",
+    user: "root",
+    password: "mfEHOcBYWiLNyWmtQgFJfqQjjKVOetrK", 
+    database: "railway",
+    port: 3306,
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0
