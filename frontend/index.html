@@ -3,13 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Wiijum Philippines - Login</title>
+  <title>Wiijump Philippines - Login</title>
   <style>
     body {
       margin: 0;
       padding: 0;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: linear-gradient(135deg, #15aabf 0%, #1c7ed6 100%);
+      /* ✅ UPDATED: Replaced solid blue with a vibrant trampoline park background image */
+      background: linear-gradient(rgba(21, 170, 191, 0.6), rgba(28, 126, 214, 0.75)), 
+                  url('https://images.unsplash.com/photo-1559564121-657e33e9d40b?q=80&w=1200&auto=format&fit=crop') no-repeat center center fixed;
+      background-size: cover;
       height: 100vh;
       display: flex;
       justify-content: center;
@@ -18,19 +21,30 @@
     }
 
     .login-container {
-      background: white;
+      background: rgba(255, 255, 255, 0.95); /* Slightly translucent for a modern glass effect */
       padding: 40px;
       border-radius: 20px;
       width: 380px;
       display: flex;
       flex-direction: column;
       align-items: center;
-      box-shadow: 0 15px 30px rgba(0,0,0,0.3);
+      box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+      backdrop-filter: blur(5px); /* Smoothly blurs the trampoline background behind the card */
     }
 
     .login-container h1 {
+      margin-bottom: 5px;
+      color: #1c7ed6;
+      font-size: 28px;
+    }
+
+    .login-container .subtitle {
+      color: #666;
+      font-size: 14px;
       margin-bottom: 30px;
-      color: #333;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 1px;
     }
 
     .login-container form {
@@ -49,10 +63,12 @@
       font-size: 16px;
       text-align: center;
       outline: none;
+      transition: all 0.2s ease;
     }
 
     .login-container input:focus {
       border-color: #1c7ed6;
+      box-shadow: 0 0 8px rgba(28, 126, 214, 0.2);
     }
 
     .login-container button {
@@ -66,6 +82,7 @@
       font-size: 18px;
       cursor: pointer;
       font-weight: bold;
+      transition: background 0.2s ease;
     }
 
     .login-container button:hover {
@@ -80,7 +97,8 @@
 <body>
 
 <div class="login-container">
-  <h1>🎯 Wiijum Philippines</h1>
+  <h1>🎯 Wiijump</h1>
+  <div class="subtitle">Philippines</div>
 
   <form onsubmit="login(event)">
     <input type="text" id="username" placeholder="Username" required>
@@ -116,13 +134,11 @@ async function login(e) {
       document.body.classList.add("fade-out");
 
       setTimeout(() => {
-        // ✅ CHANGED: Since your backend uses a wildcard routing system to map files, 
-        // passing an explicit hash parameter prevents the router from confusing it with index.html
-        window.location.href = "/#dashboard";
+        // ✅ FIXED: Now safely redirects your tab directory location straight to your dashboard panel!
+        window.location.href = "/dashboard.html#registration";
       }, 500);
 
     } else {
-      // ✅ FIXED: Changed the alert message to show the actual credentials checked by server.js
       alert("Invalid login (use admin / jump123)");
       btn.innerText = "Login";
       btn.disabled = false;
