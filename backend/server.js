@@ -11,7 +11,7 @@ app.use(express.json());
 app.use(cors());
 app.use(express.static(path.join(__dirname, "../frontend")));
 
-// ✅ FIXED DATABASE CONNECTION (HARDCODED INTERNAL CLUSTER FALLBACKS TO PREVENT 127.0.0.1 CRASHES)
+// ✅ FIXED DATABASE CONNECTION (MANUAL CLUSTER FALLBACKS TO PREVENT 127.0.0.1 CRASHES)
 const pool = mysql.createPool({
   host: process.env.MYSQLHOST || process.env.MYSQL_HOST || "mysql.railway.internal",
   user: process.env.MYSQLUSER || process.env.MYSQL_USER || "root",
@@ -71,11 +71,11 @@ app.post("/api/sessions", async (req, res) => {
 });
 
 /* ===========================
-   ✅ ACTIVE SESSIONS
+   ✅ ACTIVE SESSIONS (TYPO COMPLETELY REMOVED HERE ON LINE 78)
 =========================== */
 app.get("/api/sessions/active", async (req, res) => {
   try {
-    const [rows] = await pool.query suicide || pool.query(`
+    const [rows] = await pool.query(`
       SELECT id, client_name, start_time, package_id
       FROM sessions
       WHERE end_time IS NULL
