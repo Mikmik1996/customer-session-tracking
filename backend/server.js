@@ -14,21 +14,14 @@ app.use(express.static(path.join(__dirname, "../frontend")));
     🎯 FIXED DATABASE CONFIGURATION PARSER
 ========================================== */
 const getDatabaseConfig = () => {
-  // 1. Try to read from any variations of unified connection URLs
-  const unifiedUrl = process.env.MYSQL_URL || process.env.MYSQLURL || process.env.DATABASE_URL;
-  if (unifiedUrl) {
-    console.log("🔌 Database configured via unified connection URL string.");
-    return { uri: unifiedUrl };
-  }
+  // Directly grab the exact uppercase keys visible on your Railway Dashboard
+  const host = process.env.MYSQLHOST || "127.0.0.1";
+  const user = process.env.MYSQLUSER || "root";
+  const password = process.env.MYSQLPASSWORD || "";
+  const database = process.env.MYSQLDATABASE || "railway";
+  const port = parseInt(process.env.MYSQLPORT || "3306", 10);
 
-  // 2. Fallback to extracting explicit connection environment variables (supporting both layout styles)
-  const host = process.env.MYSQLHOST || process.env.MYSQL_HOST || "127.0.0.1";
-  const user = process.env.MYSQLUSER || process.env.MYSQL_USER || "root";
-  const password = process.env.MYSQLPASSWORD || process.env.MYSQL_PASSWORD || "";
-  const database = process.env.MYSQLDATABASE || process.env.MYSQL_DATABASE || process.env.MYSQL_DB || "railway";
-  const port = parseInt(process.env.MYSQLPORT || process.env.MYSQL_PORT || "3306", 10);
-
-  console.log(`🔌 Database properties resolved -> Host: ${host}, Port: ${port}, User: ${user}, DB: ${database}`);
+  console.log(`🔌 Attempting link -> Host: ${host}, Port: ${port}, User: ${user}, DB: ${database}`);
 
   return { host, user, password, database, port };
 };
