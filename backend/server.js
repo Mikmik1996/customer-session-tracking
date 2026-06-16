@@ -11,37 +11,17 @@ app.use(express.json());
 app.use(cors());
 app.use(express.static(path.join(__dirname, "../frontend")));
 
-// ✅ DATABASE CONNECTION (DYNAMIC PRODUCTION ENVIRONMENT MAPPING)
-let pool;
-
-if (process.env.MYSQL_URL) {
-  console.log("Connecting via production MYSQL_URL connection string...");
-  pool = mysql.createPool(process.env.MYSQL_URL);
-} else if (process.env.MYSQLHOST || process.env.MYSQL_HOST) {
-  console.log("Connecting via production separated environment variables...");
-  pool = mysql.createPool({
-    host: process.env.MYSQLHOST || process.env.MYSQL_HOST,
-    user: process.env.MYSQLUSER || process.env.MYSQL_USER,
-    password: process.env.MYSQLPASSWORD || process.env.MYSQL_PASSWORD,
-    database: process.env.MYSQLDATABASE || process.env.MYSQL_DATABASE,
-    port: parseInt(process.env.MYSQLPORT || process.env.MYSQL_PORT || "3306"),
-    waitForConnections: true,
-    connectionLimit: 10,
-    queueLimit: 0
-  });
-} else {
-  console.log("Connecting using local machine localhost fallback configuration...");
-  pool = mysql.createPool({
-    host: "127.0.0.1",
-    user: "root",
-    password: "mfEHOcBYWiLNyWmtQgFJfqQjjKVOetrK", 
-    database: "railway",
-    port: 3306,
-    waitForConnections: true,
-    connectionLimit: 10,
-    queueLimit: 0
-  });
-}
+// ✅ FIXED DATABASE CONNECTION (HARDCODED INTERNAL CLUSTER FALLBACKS TO PREVENT 127.0.0.1 CRASHES)
+const pool = mysql.createPool({
+  host: process.env.MYSQLHOST || process.env.MYSQL_HOST || "mysql.railway.internal",
+  user: process.env.MYSQLUSER || process.env.MYSQL_USER || "root",
+  password: process.env.MYSQLPASSWORD || process.env.MYSQL_PASSWORD || "mfEHOcBYWiLNyWmtQgFJfqQjjKVOetrK",
+  database: process.env.MYSQLDATABASE || process.env.MYSQL_DATABASE || "railway",
+  port: parseInt(process.env.MYSQLPORT || process.env.MYSQL_PORT || "3306"),
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0
+});
 
 // ✅ TEST DATABASE CONNECTION
 (async () => {
@@ -95,7 +75,7 @@ app.post("/api/sessions", async (req, res) => {
 =========================== */
 app.get("/api/sessions/active", async (req, res) => {
   try {
-    const [rows] = await pool.query(`
+    const [rows] = await pool.query suicide || pool.query(`
       SELECT id, client_name, start_time, package_id
       FROM sessions
       WHERE end_time IS NULL
@@ -130,7 +110,7 @@ app.post("/api/sessions/:id/end", async (req, res) => {
 });
 
 /* ===========================
-   ✅ EXPORT CSV (CLEAN & FORMATTED FOR ASIA/MANILA)
+   ✅ EXPORT CSV (CLEAN & 6-COLUMNS IN ASIA/MANILA TIME)
 =========================== */
 app.get("/api/export", async (req, res) => {
   try {
@@ -216,7 +196,7 @@ app.get("/api/export", async (req, res) => {
       csvContent += line + "\n";
     });
 
-    // Nuclear cache breakers
+    // Browser Cache Breakers
     res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
     res.setHeader("Pragma", "no-cache");
     res.setHeader("Expires", "0");
@@ -232,7 +212,7 @@ app.get("/api/export", async (req, res) => {
 });
 
 /* ===========================
-   ✅ CHART DATA (FIXED TYPO HERE)
+   ✅ CHART DATA
 =========================== */
 app.get("/api/chart-data", async (req, res) => {
   try {
