@@ -1,99 +1,78 @@
-require('dotenv').config();
-const express = require('express');
-const mysql = require('mysql');
-const path = require('path');
-const cors = require('cors');
+// 🛠️ Robust Database Table Migrator
+async function ensureTablesExist() {
+  if (tablesReady) return true;
+  
+  let connection;
+  try {
+    connection = await pool.getConnection();
+    
+    // 1. Create Staff Table
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS staff (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        username VARCHAR(50) UNIQUE NOT NULL,
+        password VARCHAR(255) NOT NULL,
+        name VARCHAR(100) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
 
-const app = express();
-const port = process.env.PORT || 3000;
+    // 2. Create Packages Table
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS packages (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        name VARCHAR(50) NOT NULL,
+        duration_minutes INT NOT NULL,
+        price DECIMAL(10, 2),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
 
-// Enable CORS and parsing middleware
-app.use(cors());
-app.use(express.json());
-app.use(express.static(path.join(__dirname)));
+    // 3. Create Sessions Table (Depends on Staff and Packages)
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS sessions (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        client_name VARCHAR(100) NOT NULL,
+        client_contact VARCHAR(20) NOT NULL,
+        package_id INT NOT NULL,
+        staff_id INT NOT NULL,
+        start_time DATETIME NOT NULL,
+        end_time DATETIME,
+        status ENUM('active', 'completed', 'cancelled') DEFAULT 'active',
+        notes TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (package_id) REFERENCES packages(id),
+        FOREIGN KEY (staff_id) REFERENCES staff(id)
+      );
+    `);
 
-// Dynamic Database Connection Pool Setup
-// Prioritizes Railway's native production variables, falling back to your local .env configurations
-const db = mysql.createPool({
-    connectionLimit: 10,
-    host: process.env.MYSQLHOST || process.env.DB_HOST || '127.0.0.1',
-    user: process.env.MYSQLUSER || process.env.DB_USER || 'root',
-    password: process.env.MYSQLPASSWORD || process.env.DB_PASSWORD || '',
-    database: process.env.MYSQLDATABASE || process.env.DB_NAME || 'customer_tracking',
-    port: process.env.MYSQLPORT || process.env.DB_PORT || 3306
-});
-
-// Self-healing database initialization for Railway production environment
-db.query(`
-    CREATE TABLE IF NOT EXISTS sessions (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        customer_id VARCHAR(255) NOT NULL,
-        session_start DATETIME NOT NULL,
-        session_end DATETIME,
-        duration_minutes INT,
-        status VARCHAR(50) DEFAULT 'Active'
-    );
-`, (err) => {
-    if (err) {
-        console.error("Database connection/initialization failed:", err.message);
-        console.error("Check your Railway environment variables if this is running in production.");
-    } else {
-        console.log("Database connected and sessions table verified successfully.");
+    // 4. Seed default data if packages are completely empty
+    const [rows] = await connection.query("SELECT COUNT(*) as count FROM packages");
+    if (rows[0].count === 0) {
+      await connection.query(`
+        INSERT INTO packages (name, duration_minutes, price) VALUES
+        ('30 Minutes', 30, 50),
+        ('1 Hour', 60, 80),
+        ('1.5 Hours', 90, 110),
+        ('2 Hours', 120, 140),
+        ('Unlimited', 999999, 200);
+      `);
+      
+      await connection.query(`
+        INSERT INTO staff (username, password, name) VALUES
+        ('admin', 'jump123', 'Administrator');
+      `);
+      console.log("🌱 Database seeded with default packages and admin credentials.");
     }
-});
 
-// Get all tracking sessions
-app.get('/api/sessions', (req, res) => {
-    db.query('SELECT * FROM sessions ORDER BY session_start DESC', (err, results) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json(results);
-    });
-});
-
-// Start a new customer tracking session
-app.post('/api/sessions', (req, res) => {
-    const { customer_id, session_start } = req.body;
-    const query = 'INSERT INTO sessions (customer_id, session_start, status) VALUES (?, ?, ?)';
-    
-    db.query(query, [customer_id, session_start, 'Active'], (err, result) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.status(201).json({ id: result.insertId, customer_id, session_start, status: 'Active' });
-    });
-});
-
-// Complete/End an active session
-app.put('/api/sessions/:id', (req, res) => {
-    const { id } = req.params;
-    const { session_end, duration_minutes, status } = req.body;
-    const query = 'UPDATE sessions SET session_end = ?, duration_minutes = ?, status = ? WHERE id = ?';
-    
-    db.query(query, [session_end, duration_minutes, status, id], (err) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({ message: 'Session updated successfully' });
-    });
-});
-
-// Export all sessions data to CSV format
-app.get('/api/export', (req, res) => {
-    db.query('SELECT * FROM sessions ORDER BY session_start DESC', (err, results) => {
-        if (err) return res.status(500).json({ error: err.message });
-
-        let csv = 'ID,Customer ID,Session Start,Session End,Duration (Min),Status\n';
-        results.forEach(row => {
-            csv += `${row.id},"${row.customer_id}",${row.session_start},${row.session_end || ''},${row.duration_minutes || ''},${row.status}\n`;
-        });
-
-        res.setHeader('Content-Type', 'text/csv');
-        res.setHeader('Content-Disposition', 'attachment; filename=sessions_export.csv');
-        res.status(200).send(csv);
-    });
-});
-
-// Fallback to serve your index.html page
-app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
-});
-
-app.listen(port, () => {
-    console.log(`Server running on port ${port}`);
-});
+    console.log("🎯 All structural relational tables verified/created successfully.");
+    tablesReady = true;
+    return true;
+  } catch (err) {
+    console.error("❌ Critical layout table migrator execution failure:", err.message);
+    throw err;
+  } finally {
+    if (connection) connection.release();
+  }
+}
