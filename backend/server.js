@@ -11,24 +11,47 @@ app.use(cors());
 app.use(express.static(path.join(__dirname, "../frontend")));
 
 /* ==========================================
-   🎯 DATABASE CONFIGURATION (RAILWAY POOL)
+    🎯 DATABASE CONFIGURATION (RAILWAY POOL)
 ========================================== */
-const pool = mysql.createPool({
+// Dynamic connection setup: Fallback gracefully between single connection string and granular blocks
+const connectionConfig = process.env.MYSQL_URL || process.env.DATABASE_URL ? {
+  uri: process.env.MYSQL_URL || process.env.DATABASE_URL
+} : {
   host: process.env.MYSQLHOST || "localhost",
   user: process.env.MYSQLUSER || "root",
   password: process.env.MYSQLPASSWORD || "",
   database: process.env.MYSQLDATABASE || "wiijum_db",
   port: process.env.MYSQLPORT ? parseInt(process.env.MYSQLPORT) : 3306,
+};
+
+const pool = mysql.createPool({
+  ...connectionConfig,
   waitForConnections: true,
   connectionLimit: 10,
-  queueLimit: 0
+  queueLimit: 0,
+  connectTimeout: 10000 // Prevent silent infinite hangs on cold starts
 });
 
-// Test database connectivity immediately upon initialization
+// ✅ FIXED & ENHANCED: Self-healing startup table generator script
 (async () => {
   try {
     const connection = await pool.getConnection();
     console.log("🚀 DATABASE CONNECTED SUCCESSFULLY TO RAILWAY MYSQL POOL!");
+    
+    // Auto-generate the tracking schema structure if it doesn't exist yet
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS customer_sessions (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        client_name VARCHAR(255) NOT NULL,
+        client_contact VARCHAR(255) NULL,
+        package_id INT NOT NULL,
+        staff_id INT DEFAULT 1,
+        start_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+        end_time DATETIME NULL
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `);
+    console.log("📦 MySQL DB Schema Verified: customer_sessions table is fully ready.");
+    
     connection.release();
   } catch (err) {
     console.error("⚠️ Database connection error. Operating in local fallback mode:", err.message);
@@ -36,7 +59,7 @@ const pool = mysql.createPool({
 })();
 
 /* ==========================================
-   🔑 USER ACCESS & FAILSAFE AUTHENTICATION
+    🔑 USER ACCESS & FAILSAFE AUTHENTICATION
 ========================================== */
 app.post("/api/login", async (req, res) => {
   const { username, password } = req.body;
@@ -66,7 +89,7 @@ app.post("/api/login", async (req, res) => {
 });
 
 /* ==========================================
-   📊 ACTIVE REAL-TIME DASHBOARD SESSIONS
+    📊 ACTIVE REAL-TIME DASHBOARD SESSIONS
 ========================================== */
 app.get("/api/sessions/active", async (req, res) => {
   try {
@@ -81,7 +104,7 @@ app.get("/api/sessions/active", async (req, res) => {
 });
 
 /* ==========================================
-   ➕ CREATE NEW SESSIONS
+    ➕ CREATE NEW SESSIONS
 ========================================== */
 app.post("/api/sessions", async (req, res) => {
   const { client_name, client_contact, package_id, staff_id } = req.body;
@@ -98,7 +121,7 @@ app.post("/api/sessions", async (req, res) => {
 });
 
 /* ==========================================
-   🛑 TERMINATE / REMOVE TRACKING SESSIONS
+    🛑 TERMINATE / REMOVE TRACKING SESSIONS
 ========================================== */
 app.post("/api/sessions/:id/end", async (req, res) => {
   const { id } = req.params;
@@ -115,12 +138,11 @@ app.post("/api/sessions/:id/end", async (req, res) => {
 });
 
 /* ==========================================
-   📈 ANALYTICS CHART METRICS (FILTER READY)
+    📈 ANALYTICS CHART METRICS (FILTER READY)
 ========================================== */
 app.get("/api/chart-data", async (req, res) => {
   const { start, end } = req.query;
   
-  // ✅ FIXED: Changed ENDFOR to END so MySQL compiles smoothly without crashing
   let sql = `
     SELECT 
       CASE 
@@ -137,7 +159,6 @@ app.get("/api/chart-data", async (req, res) => {
   
   const params = [];
   
-  // Apply date range filters if specified
   if (start && end) {
     sql += " WHERE DATE(CONVERT_TZ(start_time, '+00:00', '+08:00')) BETWEEN ? AND ? ";
     params.push(start, end);
@@ -150,12 +171,12 @@ app.get("/api/chart-data", async (req, res) => {
     res.json(rows);
   } catch (err) {
     console.error("❌ Analytics aggregator compilation failed:", err.message);
-    res.status(500).json([]); // Return an empty array instead of crashing if the query fails
+    res.status(500).json([]); 
   }
 });
 
 /* ==========================================
-   📥 EXPORT LOGS ROUTE (FILTERS COMPATIBLE)
+    📥 EXPORT LOGS ROUTE (FILTERS COMPATIBLE)
 ========================================== */
 app.get("/api/export", async (req, res) => {
   const { start, end } = req.query;
