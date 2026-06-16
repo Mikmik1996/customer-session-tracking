@@ -107,22 +107,19 @@ app.post("/api/sessions/:id/end", async (req, res) => {
 });
 
 /* ===========================
-   ✅ EXPORT CSV (CLEAN & DYNAMIC UNLIMITED TIMES)
+   ✅ EXPORT CSV (CLEANED & WRAPPED IN STRINGS)
 =========================== */
 app.get("/api/export", async (req, res) => {
   try {
-    // 1. Pull package_id alongside metadata to calculate true standard limits vs unlimited drops
     const [rows] = await pool.query(`
       SELECT client_name, client_contact, package_id, start_time, end_time
       FROM sessions
       ORDER BY start_time DESC
     `);
 
-    // 2. Clean row arrays into formatted strings mapped to Asia/Manila 
     const cleanedRows = rows.map(row => {
       const startDate = new Date(row.start_time);
       
-      // Setup dynamic package names and calculate duration thresholds
       let packageName = "Unknown";
       let durationMins = 30;
       if (row.package_id == 1) { packageName = "30 mins"; durationMins = 30; }
@@ -131,7 +128,7 @@ app.get("/api/export", async (req, res) => {
       else if (row.package_id == 4) { packageName = "2 hours"; durationMins = 120; }
       else if (row.package_id == 5) { packageName = "Unlimited"; durationMins = 999; }
 
-      // Date Layout: MM/DD/YYYY cleanly parsed for the PH
+      // Force standard string formatting using Manila timezone
       const dateString = startDate.toLocaleDateString("en-PH", {
         timeZone: "Asia/Manila",
         year: "numeric",
@@ -139,7 +136,6 @@ app.get("/api/export", async (req, res) => {
         day: "2-digit"
       });
 
-      // Start Time Layout: HH:MM:SS AM/PM
       const startTimeString = startDate.toLocaleTimeString("en-PH", {
         timeZone: "Asia/Manila",
         hour: "numeric",
@@ -148,10 +144,8 @@ app.get("/api/export", async (req, res) => {
         hour12: true
       });
 
-      // Target clean End Time layouts dynamically
       let endTimeString = "-";
       if (durationMins < 999) {
-        // Standard package: Render explicit mathematically expected termination mark
         const endDate = new Date(startDate.getTime() + durationMins * 60000);
         endTimeString = endDate.toLocaleTimeString("en-PH", {
           timeZone: "Asia/Manila",
@@ -161,7 +155,6 @@ app.get("/api/export", async (req, res) => {
           hour12: true
         });
       } else if (row.end_time) {
-        // Unlimited package: Fetch timestamp generated when "Remove" button was clicked
         const removeDate = new Date(row.end_time);
         endTimeString = removeDate.toLocaleTimeString("en-PH", {
           timeZone: "Asia/Manila",
@@ -172,26 +165,25 @@ app.get("/api/export", async (req, res) => {
         });
       }
 
+      // Prepend an apostrophe/quote modifier to prevent Excel Scientific notation corruption
       return {
         date: dateString,
-        name: row.client_name,
-        contact: row.client_contact || "N/A",
+        name: row.client_name || "N/A",
+        contact: row.client_contact ? `'\t${row.client_contact}` : "N/A", // Hidden tab literal stops Excel formatting breakage
         package: packageName,
         start: startTimeString,
         end: endTimeString
       };
     });
 
-    // 3. Define the explicit columns requested
     const headers = ["Date", "Customer Name", "Contact Number", "Package", "Start Time", "End Time"];
     let csvContent = headers.join(",") + "\n";
 
-    // 4. Construct the clean file while wrapping text inside quotes to protect commas
     cleanedRows.forEach(r => {
       const line = [
         `"${r.date}"`,
         `"${r.name.replace(/"/g, '""')}"`,
-        `"${r.contact.replace(/"/g, '""')}"`,
+        `"${r.contact}"`,
         `"${r.package}"`,
         `"${r.start}"`,
         `"${r.end}"`
@@ -199,7 +191,6 @@ app.get("/api/export", async (req, res) => {
       csvContent += line + "\n";
     });
 
-    // 5. Fire download attachment prompt straight to dashboard admin user panels
     res.header("Content-Type", "text/csv");
     res.attachment("session_report.csv");
     res.send(csvContent);
@@ -209,7 +200,6 @@ app.get("/api/export", async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 });
-
 /* ===========================
    ✅ CHART DATA
 =========================== */
