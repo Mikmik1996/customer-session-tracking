@@ -127,15 +127,15 @@ async function login(e) {
 
     const data = await res.json();
 
-    if (data.success) {
+  if (data.success) {
       // Store a simple local login flag so dashboard can verify you logged in
       localStorage.setItem("isLoggedIn", "true");
       
       document.body.classList.add("fade-out");
 
       setTimeout(() => {
-        // ✅ FIXED: Now safely redirects your tab directory location straight to your dashboard panel!
-        window.location.href = "/dashboard.html#registration";
+        // ✅ FIXED: Explicitly target dashboard.html to bypass the root wildcard index fallback rule!
+        window.location.href = "/dashboard.html";
       }, 500);
 
     } else {
@@ -154,4 +154,4 @@ async function login(e) {
 </script>
 
 </body>
-</html>
+</html>l

@@ -305,3 +305,11 @@ document.addEventListener("DOMContentLoaded", () => {
   console.log("DOM fully loaded and parsed. Safe to boot interface elements.");
   initializeDashboardRouting();
 });
+
+// ✅ Run this immediately when the dashboard template page mounts into view
+document.addEventListener("DOMContentLoaded", () => {
+  // Check if your helper layout management system exists, then default to registration view
+  if (typeof showSection === "function") {
+    showSection("registration");
+  }
+});
