@@ -107,14 +107,33 @@
     /* ==========================================
        🎯 CUSTOMER REGISTRATION CARD STRUCTURE
     ========================================== */
-    .flex-center-container {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      width: 100%;
-      min-height: 70vh;
-    }
+.flex-center-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  min-height: 70vh;
+  position: relative;
+  z-index: 1;
+}
 
+.section {
+  display: none;
+}
+
+.section.active {
+  display: block;
+}
+
+.main {
+  position: relative;
+  z-index: 0;
+}
+
+.sidebar {
+  position: relative;
+  z-index: 10;
+}
     .card {
       background: #7aa6c2;
       padding: 40px;
