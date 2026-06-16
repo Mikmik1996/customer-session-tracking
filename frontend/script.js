@@ -213,7 +213,7 @@ async function removeSession(id) {
 /* ==========================================
     ANALYTICS REVENUE METRIC CHART ENGINE
 ========================================== */
-let chart; 
+let chart;
 
 async function loadChart() {
   const canvas = document.getElementById("chart");
@@ -234,19 +234,36 @@ async function loadChart() {
     const res = await fetch(url);
     const data = await res.json();
 
-    const labels = data.map(d => d.package_name);
-    const values = data.map(d => d.count);
+    // ✅ FIX: GROUP DUPLICATES (like "Unlimited")
+    const grouped = {};
+
+    data.forEach(d => {
+      const name = d.package_name;
+      const count = d.count;
+
+      if (grouped[name]) {
+        grouped[name] += count;
+      } else {
+        grouped[name] = count;
+      }
+    });
+
+    // ✅ Convert to arrays
+    const labels = Object.keys(grouped);
+    const values = Object.values(grouped);
 
     const ctx = canvas.getContext("2d");
 
+    // ✅ Destroy old chart safely
     if (chart) {
       chart.destroy();
     }
 
+    // ✅ Create chart
     chart = new Chart(ctx, {
       type: "bar",
       data: {
-        labels,
+        labels: labels,
         datasets: [{
           label: "Registered Customers By Package",
           data: values,
@@ -265,10 +282,12 @@ async function loadChart() {
         }
       }
     });
+
   } catch (err) {
     console.error("❌ Analytics chart visualization refresh error caught:", err);
   }
 }
+
 
 /* ==========================================
     EXPORT LOGS ENGINE TO SPREADSHEETS
