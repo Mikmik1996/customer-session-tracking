@@ -11,14 +11,12 @@ app.use(express.json());
 app.use(cors());
 app.use(express.static(path.join(__dirname, "../frontend")));
 
-// ✅ DATABASE CONNECTION (CORRECTED FOR PRODUCTION RAILWAY DEPLOYMENTS)
+// ✅ DATABASE CONNECTION (PRODUCTION + LOCAL COMPATIBLE)
 let pool;
 if (process.env.MYSQL_URL) {
-  // Production: Connect via Railway's automatic internal connection URL string
   console.log("Connecting using production MYSQL_URL...");
   pool = mysql.createPool(process.env.MYSQL_URL);
 } else {
-  // Local Fallback: For testing on your own computer
   console.log("Connecting using local configuration fallback...");
   pool = mysql.createPool({
     host: process.env.MYSQLHOST || "127.0.0.1",
@@ -32,7 +30,7 @@ if (process.env.MYSQL_URL) {
   });
 }
 
-// ✅ TEST CONNECTION 
+// ✅ TEST DATABASE CONNECTION
 (async () => {
   try {
     const conn = await pool.getConnection();
@@ -140,7 +138,7 @@ app.get("/api/export", async (req, res) => {
       else if (row.package_id == 4) { packageName = "2 hours"; durationMins = 120; }
       else if (row.package_id == 5) { packageName = "Unlimited"; durationMins = 999; }
 
-      // Force clean localized formatting in Asia/Manila Timezone
+      // Force formatting using Manila timezone
       const dateString = startDate.toLocaleDateString("en-PH", {
         timeZone: "Asia/Manila",
         year: "numeric",
@@ -158,7 +156,6 @@ app.get("/api/export", async (req, res) => {
 
       let endTimeString = "-";
       if (durationMins < 999) {
-        // Regular packages: Calculate expected end time mathematically
         const endDate = new Date(startDate.getTime() + durationMins * 60000);
         endTimeString = endDate.toLocaleTimeString("en-PH", {
           timeZone: "Asia/Manila",
@@ -168,7 +165,6 @@ app.get("/api/export", async (req, res) => {
           hour12: true
         });
       } else if (row.end_time) {
-        // Unlimited packages: Pull exact timestamp recorded when you clicked "Remove"
         const removeDate = new Date(row.end_time);
         endTimeString = removeDate.toLocaleTimeString("en-PH", {
           timeZone: "Asia/Manila",
@@ -182,19 +178,17 @@ app.get("/api/export", async (req, res) => {
       return {
         date: dateString,
         name: row.client_name || "N/A",
-        contact: row.client_contact ? row.client_contact : "N/A",
+        contact: row.client_contact || "N/A",
         package: packageName,
         start: startTimeString,
         end: endTimeString
       };
     });
 
-    // Setup pristine 6 columns requested
     const headers = ["Date", "Customer Name", "Contact Number", "Package", "Start Time", "End Time"];
     let csvContent = headers.join(",") + "\n";
 
     cleanedRows.forEach(r => {
-      // Escape strings securely inside literal quotes to protect against cell layout bleeding
       const cleanName = String(r.name).replace(/"/g, '""');
       const cleanContact = String(r.contact).replace(/"/g, '""');
       
@@ -209,7 +203,7 @@ app.get("/api/export", async (req, res) => {
       csvContent += line + "\n";
     });
 
-    // Enforce explicit cache breaking headers so web browsers pull fresh file generation structures
+    // Nuclear cache breakers
     res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
     res.setHeader("Pragma", "no-cache");
     res.setHeader("Expires", "0");
@@ -225,11 +219,11 @@ app.get("/api/export", async (req, res) => {
 });
 
 /* ===========================
-   ✅ CHART DATA
+   ✅ CHART DATA (FIXED TYPO HERE)
 =========================== */
 app.get("/api/chart-data", async (req, res) => {
   try {
-    const [rows] = await pool.query suicide(`
+    const [rows] = await pool.query(`
       SELECT 
         CASE 
           WHEN package_id = 1 THEN '30 mins'
