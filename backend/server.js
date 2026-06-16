@@ -14,26 +14,29 @@ app.use(express.static(path.join(__dirname, "../frontend")));
     🎯 FIXED DATABASE CONFIGURATION PARSER
 ========================================== */
 const getDatabaseConfig = () => {
-  // If a unified production URL is explicitly provided, prioritize it
-  const unifiedUrl = process.env.MYSQL_URL || process.env.DATABASE_URL || process.env.MYSQLURL;
+  // 1. Try to read from any variations of unified connection URLs
+  const unifiedUrl = process.env.MYSQL_URL || process.env.MYSQLURL || process.env.DATABASE_URL;
   if (unifiedUrl) {
+    console.log("🔌 Database configured via unified connection URL string.");
     return { uri: unifiedUrl };
   }
 
-  // Explicitly map individual standard Railway environment container keys
-  return {
-    host: process.env.MYSQLHOST || process.env.MYSQL_HOST || "localhost",
-    user: process.env.MYSQLUSER || process.env.MYSQL_USER || "root",
-    password: process.env.MYSQLPASSWORD || process.env.MYSQL_PASSWORD || "",
-    database: process.env.MYSQLDATABASE || process.env.MYSQL_DB || process.env.MYSQL_DATABASE || "railway",
-    port: parseInt(process.env.MYSQLPORT || process.env.MYSQL_PORT || "3306", 10),
-  };
+  // 2. Fallback to extracting explicit connection environment variables (supporting both layout styles)
+  const host = process.env.MYSQLHOST || process.env.MYSQL_HOST || "127.0.0.1";
+  const user = process.env.MYSQLUSER || process.env.MYSQL_USER || "root";
+  const password = process.env.MYSQLPASSWORD || process.env.MYSQL_PASSWORD || "";
+  const database = process.env.MYSQLDATABASE || process.env.MYSQL_DATABASE || process.env.MYSQL_DB || "railway";
+  const port = parseInt(process.env.MYSQLPORT || process.env.MYSQL_PORT || "3306", 10);
+
+  console.log(`🔌 Database properties resolved -> Host: ${host}, Port: ${port}, User: ${user}, DB: ${database}`);
+
+  return { host, user, password, database, port };
 };
 
-// Establish configuration mappings
+// Establish configuration parameters
 const baseConfig = getDatabaseConfig();
 
-// Create primary application query connection pool instance explicitly unpacking configurations
+// Create primary application query connection pool instance based on resolved configurations
 const pool = baseConfig.uri 
   ? mysql.createPool(baseConfig.uri)
   : mysql.createPool({
@@ -43,9 +46,9 @@ const pool = baseConfig.uri
       database: baseConfig.database,
       port: baseConfig.port,
       waitForConnections: true,
-      connectionLimit: 10,
+      connectionLimit: 5,         // Lowered to prevent connection exhaustion in production
       queueLimit: 0,
-      connectTimeout: 10000
+      connectTimeout: 20000       // Extended to 20s to allow slower internal container meshes to initialize safely
     });
 
 // Track layout schema deployment readiness state globally
