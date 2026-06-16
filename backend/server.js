@@ -11,34 +11,42 @@ app.use(cors());
 app.use(express.static(path.join(__dirname, "../frontend")));
 
 /* ==========================================
-    🎯 DATABASE CONFIGURATION PARSER
+    🎯 FIXED DATABASE CONFIGURATION PARSER
 ========================================== */
 const getDatabaseConfig = () => {
+  // If a unified production URL is explicitly provided, prioritize it
   const unifiedUrl = process.env.MYSQL_URL || process.env.DATABASE_URL || process.env.MYSQLURL;
   if (unifiedUrl) {
     return { uri: unifiedUrl };
   }
 
+  // Explicitly map individual standard Railway environment container keys
   return {
-    host: process.env.MYSQLHOST || "localhost",
-    user: process.env.MYSQLUSER || "root",
-    password: process.env.MYSQLPASSWORD || "",
-    database: process.env.MYSQLDATABASE || "wiijum_db",
-    port: process.env.MYSQLPORT ? parseInt(process.env.MYSQLPORT) : 3306,
+    host: process.env.MYSQLHOST || process.env.MYSQL_HOST || "localhost",
+    user: process.env.MYSQLUSER || process.env.MYSQL_USER || "root",
+    password: process.env.MYSQLPASSWORD || process.env.MYSQL_PASSWORD || "",
+    database: process.env.MYSQLDATABASE || process.env.MYSQL_DB || process.env.MYSQL_DATABASE || "railway",
+    port: parseInt(process.env.MYSQLPORT || process.env.MYSQL_PORT || "3306", 10),
   };
 };
 
-// Establish a clean base configuration
+// Establish configuration mappings
 const baseConfig = getDatabaseConfig();
 
-// Create our primary application query connection pool instance
-const pool = mysql.createPool({
-  ...baseConfig,
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0,
-  connectTimeout: 10000
-});
+// Create primary application query connection pool instance explicitly unpacking configurations
+const pool = baseConfig.uri 
+  ? mysql.createPool(baseConfig.uri)
+  : mysql.createPool({
+      host: baseConfig.host,
+      user: baseConfig.user,
+      password: baseConfig.password,
+      database: baseConfig.database,
+      port: baseConfig.port,
+      waitForConnections: true,
+      connectionLimit: 10,
+      queueLimit: 0,
+      connectTimeout: 10000
+    });
 
 // Track layout schema deployment readiness state globally
 let tablesReady = false;
