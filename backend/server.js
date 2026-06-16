@@ -1,274 +1,99 @@
-const express = require("express");
-const mysql = require("mysql2/promise");
-const path = require("path");
-const cors = require("cors");
+require('dotenv').config();
+const express = require('express');
+const mysql = require('mysql');
+const path = require('path');
+const cors = require('cors');
 
 const app = express();
-app.use(express.json());
+const port = process.env.PORT || 3000;
+
+// Enable CORS and parsing middleware
 app.use(cors());
+app.use(express.json());
+app.use(express.static(path.join(__dirname)));
 
-// Serve all frontend static files automatically
-app.use(express.static(path.join(__dirname, "../frontend")));
-
-/* ==========================================
-    🎯 DIRECT INTERNAL MYSQL CONNECTION STRING
-========================================== */
-// Explicitly using your verified live Railway database network path
-const productionDatabaseUrl = "mysql://root:mfEHOcBYWiLNyWmtQgFJfqQjjKVOetrK@mysql1.railway.internal:3306/railway";
-
-// Initialize connection pool with robust connection handling overrides
-const pool = mysql.createPool({
-  uri: productionDatabaseUrl,
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0,
-  connectTimeout: 30000 // 30 seconds connection threshold to accommodate system spin-ups
+// Dynamic Database Connection Pool Setup
+// Prioritizes Railway's native production variables, falling back to your local .env configurations
+const db = mysql.createPool({
+    connectionLimit: 10,
+    host: process.env.MYSQLHOST || process.env.DB_HOST || '127.0.0.1',
+    user: process.env.MYSQLUSER || process.env.DB_USER || 'root',
+    password: process.env.MYSQLPASSWORD || process.env.DB_PASSWORD || '',
+    database: process.env.MYSQLDATABASE || process.env.DB_NAME || 'customer_tracking',
+    port: process.env.MYSQLPORT || process.env.DB_PORT || 3306
 });
 
-console.log("🔌 Hardcoded private network database URL successfully loaded into driver engine.");
-
-// Track layout schema deployment readiness state globally
-let tablesReady = false;
-
-// 🛠️ Dynamic Database Table Migrator
-async function ensureTablesExist() {
-  if (tablesReady) return true;
-  
-  let connection;
-  try {
-    // Grab an authenticated client directly out of our pre-configured Railway pool
-    connection = await pool.getConnection();
-
-    // 1. Build the active tracking sessions table structure if missing
-    await connection.query(`
-      CREATE TABLE IF NOT EXISTS customer_sessions (
+// Self-healing database initialization for Railway production environment
+db.query(`
+    CREATE TABLE IF NOT EXISTS sessions (
         id INT AUTO_INCREMENT PRIMARY KEY,
-        client_name VARCHAR(255) NOT NULL,
-        client_contact VARCHAR(255) NULL,
-        package_id INT NOT NULL,
-        staff_id INT DEFAULT 1,
-        start_time DATETIME DEFAULT CURRENT_TIMESTAMP,
-        end_time DATETIME NULL
-      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-    `);
-
-    // 2. Build the staff login credential verification table structure if missing
-    await connection.query(`
-      CREATE TABLE IF NOT EXISTS staff (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        username VARCHAR(100) NOT NULL UNIQUE,
-        password VARCHAR(255) NOT NULL,
-        name VARCHAR(100) NULL
-      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-    `);
-
-    console.log("🚀 DATABASE INITIALIZATION COMPLETE: All tracking tables verified successfully!");
-    tablesReady = true;
-    return true;
-  } catch (err) {
-    console.error("⚠️ Database initialization pending. Retrying... Reason:", err.message);
-    return false;
-  } finally {
-    if (connection) connection.release(); // Securely return client connection back to the main pool
-  }
-}
-
-// Trigger initial bootstrapping loop pass immediately on container environment wake up
-ensureTablesExist();
-
-/* ==========================================
-    🔑 USER ACCESS & FAILSAFE AUTHENTICATION
-========================================== */
-app.post("/api/login", async (req, res) => {
-  const { username, password } = req.body;
-  console.log(`🔑 Login validation checkpoint for: ${username}`);
-
-  if (username === "admin" && password === "jump123") {
-    console.log("🎯 Access granted via hardcoded administrator bypass.");
-    return res.json({ success: true });
-  }
-
-  try {
-    await ensureTablesExist();
-    const [rows] = await pool.query(
-      "SELECT * FROM staff WHERE username = ? AND password = ?", 
-      [username, password]
+        customer_id VARCHAR(255) NOT NULL,
+        session_start DATETIME NOT NULL,
+        session_end DATETIME,
+        duration_minutes INT,
+        status VARCHAR(50) DEFAULT 'Active'
     );
-
-    if (rows.length > 0) {
-      res.json({ success: true });
+`, (err) => {
+    if (err) {
+        console.error("Database connection/initialization failed:", err.message);
+        console.error("Check your Railway environment variables if this is running in production.");
     } else {
-      res.json({ success: false });
+        console.log("Database connected and sessions table verified successfully.");
     }
-  } catch (err) {
-    console.error("⚠️ Fallback validation active. Rejecting query request.");
-    res.json({ success: false });
-  }
 });
 
-/* ==========================================
-    📊 ACTIVE REAL-TIME DASHBOARD SESSIONS
-========================================== */
-app.get("/api/sessions/active", async (req, res) => {
-  try {
-    const isReady = await ensureTablesExist();
-    if (!isReady) {
-      return res.json([]); 
-    }
-
-    const [rows] = await pool.query(
-      "SELECT * FROM customer_sessions WHERE end_time IS NULL ORDER BY start_time DESC"
-    );
-    res.json(rows);
-  } catch (err) {
-    console.error("❌ Error fetching active panel layout row items:", err.message);
-    res.status(500).json([]);
-  }
-});
-
-/* ==========================================
-    ➕ CREATE NEW SESSIONS
-========================================== */
-app.post("/api/sessions", async (req, res) => {
-  const { client_name, client_contact, package_id, staff_id } = req.body;
-  try {
-    await ensureTablesExist();
-    await pool.query(
-      "INSERT INTO customer_sessions (client_name, client_contact, package_id, staff_id, start_time) VALUES (?, ?, ?, ?, NOW())",
-      [client_name, client_contact, package_id, staff_id || 1]
-    );
-    res.json({ success: true });
-  } catch (err) {
-    console.error("❌ Error saving transaction:", err.message);
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-
-/* ==========================================
-    🛑 TERMINATE / REMOVE TRACKING SESSIONS
-========================================== */
-app.post("/api/sessions/:id/end", async (req, res) => {
-  const { id } = req.params;
-  try {
-    await ensureTablesExist();
-    await pool.query(
-      "UPDATE customer_sessions SET end_time = NOW() WHERE id = ?",
-      [id]
-    );
-    res.json({ success: true });
-  } catch (err) {
-    console.error("❌ Error concluding customer timeline context:", err.message);
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-
-/* ==========================================
-    📈 ANALYTICS CHART METRICS
-========================================== */
-app.get("/api/chart-data", async (req, res) => {
-  const { start, end } = req.query;
-  
-  let sql = `
-    SELECT 
-      CASE 
-        WHEN package_id = 1 THEN '30 mins'
-        WHEN package_id = 2 THEN '1 hour'
-        WHEN package_id = 3 THEN '1.5 hours'
-        WHEN package_id = 4 THEN '2 hours'
-        WHEN package_id = 5 THEN 'Unlimited'
-        ELSE 'Unknown'
-      END AS package_name,
-      COUNT(*) AS count 
-    FROM customer_sessions
-  `;
-  
-  const params = [];
-  if (start && end) {
-    sql += " WHERE DATE(CONVERT_TZ(start_time, '+00:00', '+08:00')) BETWEEN ? AND ? ";
-    params.push(start, end);
-  }
-  
-  sql += " GROUP BY package_id ORDER BY package_id ASC";
-
-  try {
-    await ensureTablesExist();
-    const [rows] = await pool.query(sql, params);
-    res.json(rows);
-  } catch (err) {
-    console.error("❌ Analytics aggregator compilation failed:", err.message);
-    res.status(500).json([]);
-  }
-});
-
-/* ==========================================
-    📥 EXPORT LOGS ROUTE
-========================================== */
-app.get("/api/export", async (req, res) => {
-  const { start, end } = req.query;
-
-  let sql = `
-    SELECT 
-      client_name, 
-      client_contact,
-      CASE 
-        WHEN package_id = 1 THEN '30 mins'
-        WHEN package_id = 2 THEN '1 hour'
-        WHEN package_id = 3 THEN '1.5 hours'
-        WHEN package_id = 4 THEN '2 hours'
-        WHEN package_id = 5 THEN 'Unlimited'
-        ELSE 'Other'
-      END AS package_name,
-      CONVERT_TZ(start_time, '+00:00', '+08:00') AS local_start,
-      CONVERT_TZ(end_time, '+00:00', '+08:00') AS local_end
-    FROM customer_sessions
-  `;
-
-  const params = [];
-  if (start && end) {
-    sql += " WHERE DATE(CONVERT_TZ(start_time, '+00:00', '+08:00')) BETWEEN ? AND ? ";
-    params.push(start, end);
-  }
-
-  sql += " ORDER BY start_time DESC";
-
-  try {
-    await ensureTablesExist();
-    const [rows] = await pool.query(sql, params);
-
-    res.setHeader("Content-Type", "text/csv");
-    res.setHeader("Content-Disposition", `attachment; filename=Wiijum_Report_${start || "All"}_to_${end || "All"}.csv`);
-
-    let csvContent = "Date,Customer Name,Contact Number,Package,Start Time,End Time\n";
-
-    rows.forEach(row => {
-      const startDateObj = new Date(row.local_start);
-      const dateString = !isNaN(startDateObj) ? startDateObj.toLocaleDateString("en-PH") : "-";
-      const startTimeString = !isNaN(startDateObj) ? startDateObj.toLocaleTimeString("en-PH", { hour: '2-digit', minute: '2-digit' }) : "-";
-      
-      let endTimeString = "-";
-      if (row.local_end) {
-        const endDateObj = new Date(row.local_end);
-        if (!isNaN(endDateObj)) {
-          endTimeString = endDateObj.toLocaleTimeString("en-PH", { hour: '2-digit', minute: '2-digit' });
-        }
-      }
-
-      csvContent += `"${dateString}","${row.client_name}","${row.client_contact}","${row.package_name}","${startTimeString}","${endTimeString}"\n`;
+// Get all tracking sessions
+app.get('/api/sessions', (req, res) => {
+    db.query('SELECT * FROM sessions ORDER BY session_start DESC', (err, results) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(results);
     });
-
-    res.send(csvContent);
-  } catch (err) {
-    console.error("❌ CSV engine compiler error:", err.message);
-    res.status(500).send("Error exporting business metric reports csv");
-  }
 });
 
-// Fallback Wildcard route for UI asset redirection mapping
-app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "../frontend/index.html"));
+// Start a new customer tracking session
+app.post('/api/sessions', (req, res) => {
+    const { customer_id, session_start } = req.body;
+    const query = 'INSERT INTO sessions (customer_id, session_start, status) VALUES (?, ?, ?)';
+    
+    db.query(query, [customer_id, session_start, 'Active'], (err, result) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.status(201).json({ id: result.insertId, customer_id, session_start, status: 'Active' });
+    });
 });
 
-const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => {
-  console.log(`🚀 Server fully operational and running live on port ${PORT}`);
+// Complete/End an active session
+app.put('/api/sessions/:id', (req, res) => {
+    const { id } = req.params;
+    const { session_end, duration_minutes, status } = req.body;
+    const query = 'UPDATE sessions SET session_end = ?, duration_minutes = ?, status = ? WHERE id = ?';
+    
+    db.query(query, [session_end, duration_minutes, status, id], (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ message: 'Session updated successfully' });
+    });
+});
+
+// Export all sessions data to CSV format
+app.get('/api/export', (req, res) => {
+    db.query('SELECT * FROM sessions ORDER BY session_start DESC', (err, results) => {
+        if (err) return res.status(500).json({ error: err.message });
+
+        let csv = 'ID,Customer ID,Session Start,Session End,Duration (Min),Status\n';
+        results.forEach(row => {
+            csv += `${row.id},"${row.customer_id}",${row.session_start},${row.session_end || ''},${row.duration_minutes || ''},${row.status}\n`;
+        });
+
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', 'attachment; filename=sessions_export.csv');
+        res.status(200).send(csv);
+    });
+});
+
+// Fallback to serve your index.html page
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+app.listen(port, () => {
+    console.log(`Server running on port ${port}`);
 });
