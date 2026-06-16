@@ -16,9 +16,6 @@ function formatRemainingTime(totalSeconds) {
   const paddedMinutes = String(minutes).padStart(2, '0');
   const paddedSeconds = String(seconds).padStart(2, '0');
 
-  // If you want to hide hours when it's 0 (e.g., "16:12"), use this return instead:
-  // return hours > 0 ? `${paddedHours}:${paddedMinutes}:${paddedSeconds}` : `${paddedMinutes}:${paddedSeconds}`;
-
   return `${paddedHours}:${paddedMinutes}:${paddedSeconds}`;
 }
 
@@ -192,44 +189,80 @@ async function removeSession(id) {
 }
 
 /* =======================
-   ✅ CHART
+   ✅ CHART (UPDATED WITH DYNAMIC FILTER PASSING)
 ======================= */
-let chart;
+let chart; // Globally tracks your active chart object to prevent tooltips overlapping
 
 async function loadChart() {
   const canvas = document.getElementById("chart");
   if (!canvas) return;
 
-  const res = await fetch("/api/chart-data");
-  const data = await res.json();
+  // 1. Capture the dates selected in the HTML input boxes right now
+  const startVal = document.getElementById("startDate").value;
+  const endVal = document.getElementById("endDate").value;
 
-  if (!Array.isArray(data) || data.length === 0) return;
+  // 2. Append values onto backend parameters if both text fields are populated
+  let url = "/api/chart-data";
+  if (startVal && endVal) {
+    url += `?start=${startVal}&end=${endVal}`;
+  }
 
-  const labels = data.map(d => d.package_name);
-  const values = data.map(d => d.count);
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
 
-  const ctx = canvas.getContext("2d");
+    const labels = data.map(d => d.package_name);
+    const values = data.map(d => d.count);
 
-  if (chart) chart.destroy();
+    const ctx = canvas.getContext("2d");
 
-  chart = new Chart(ctx, {
-    type: "bar",
-    data: {
-      labels,
-      datasets: [{
-        label: "Customers",
-        data: values,
-        backgroundColor: "#1c7ed6"
-      }]
+    // 3. Destroy old instance if it exists to break canvas memory cache locks
+    if (chart) {
+      chart.destroy();
     }
-  });
+
+    // 4. Render fresh clean filtered column items
+    chart = new Chart(ctx, {
+      type: "bar",
+      data: {
+        labels,
+        datasets: [{
+          label: "Customers",
+          data: values,
+          backgroundColor: "#1c7ed6"
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: { stepSize: 1 }
+          }
+        }
+      }
+    });
+
+  } catch (err) {
+    console.error("❌ Load chart analytics error:", err);
+  }
 }
 
 /* =======================
-   ✅ EXPORT
+   ✅ EXPORT (UPDATED TO REMEMBER APPLIED DATES)
 ======================= */
 function downloadCSV() {
-  window.location.href = "/api/export";
+  const startVal = document.getElementById("startDate").value;
+  const endVal = document.getElementById("endDate").value;
+
+  let url = "/api/export";
+  if (startVal && endVal) {
+    url += `?start=${startVal}&end=${endVal}`;
+  }
+
+  // Execute clean spreadsheet target download redirection window call
+  window.location.href = url;
 }
 
 /* =======================
