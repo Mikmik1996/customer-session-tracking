@@ -367,7 +367,7 @@
         <button onclick="loadChart()">Filter</button>
       </div>
 
-<div style="display:flex; gap:20px;">
+<div style="display:flex; gap:20px; align-items:flex-start;">
 
   <!-- Chart -->
   <div style="flex: 3; height: 450px;">
@@ -375,11 +375,34 @@
   </div>
 
   <!-- ✅ Legend (right side) -->
-  <div id="chartLegend" style="flex: 1; padding: 10px;">
-    <h3 style="margin-bottom:10px;">Summary</h3>
-    <ul id="legendList" style="list-style:none; padding:0;"></ul>
-  </div>
+  <div id="chartLegend" style="
+  flex:1;
+  padding:15px;
+  background:white;
+  border-radius:12px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+">
+  <h3 style="
+    margin-bottom:15px;
+    font-size:18px;
+    font-weight:600;
+  ">
+    Summary
+  </h3>
+
+  <ul id="legendList" style="list-style:none; padding:0;"></ul>
+</div>
+
     
+<div id="chartLegend" style="
+  flex:1;
+  padding:15px;
+  background:white;
+  border-radius:12px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+">
+``
+
 
 </div> <!-- END flex container -->
 
