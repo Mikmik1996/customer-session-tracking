@@ -18,6 +18,9 @@
       overflow: hidden;
     }
 
+    /* ==========================================
+       📁 SIDEBAR NAVIGATION MENU PANELS
+    ========================================== */
     .sidebar {
       width: 240px;
       height: 100vh;
@@ -25,6 +28,7 @@
       color: white;
       display: flex;
       flex-direction: column;
+      box-shadow: 4px 0 10px rgba(0,0,0,0.1);
     }
 
     .sidebar h2 {
@@ -32,6 +36,8 @@
       padding: 25px 0;
       margin: 0;
       background: #184089;
+      font-size: 22px;
+      letter-spacing: 1px;
     }
 
     .menu {
@@ -42,12 +48,16 @@
 
     .menu button {
       width: 100%;
-      padding: 16px;
+      padding: 16px 20px;
       border: none;
       background: none;
-      color: rgba(255,255,255,0.85);
+      color: rgba(255, 255, 255, 0.85);
       text-align: left;
       cursor: pointer;
+      font-size: 15px;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      outline: none;
     }
 
     .menu button:hover {
@@ -57,20 +67,35 @@
 
     .menu button.active {
       background: #2f6fb3;
+      color: white;
       border-left: 5px solid #fff;
+      padding-left: 15px; /* Adjust padding to accommodate border accent beautifully */
     }
 
     .menu .logout-btn {
       margin-top: auto;
       background: #143773;
+      border-top: 1px solid rgba(255,255,255,0.1);
     }
 
+    .menu .logout-btn:hover {
+      background: #c92a2a;
+    }
+
+    /* ==========================================
+       🖼️ MAIN CONTENT CANVAS WORKSPACE
+    ========================================== */
     .main {
       flex: 1;
       padding: 30px;
+      height: 100vh;
       overflow-y: auto;
+      box-sizing: border-box;
     }
 
+    /* ==========================================
+       🚦 VIEWPORT VISIBILITY MANAGEMENT HOOKS
+    ========================================== */
     .section {
       display: none;
     }
@@ -79,26 +104,109 @@
       display: block;
     }
 
-    .flex-center-container {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 70vh;
-    }
+    /* ==========================================
+       🎯 CUSTOMER REGISTRATION CARD STRUCTURE
+    ========================================== */
+.flex-center-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  min-height: 70vh;
+  position: relative;
+  z-index: 1;
+}
 
+.section {
+  display: none;
+}
+
+.section.active {
+  display: block;
+}
+
+.main {
+  position: relative;
+  z-index: 0;
+}
+
+.sidebar {
+  position: relative;
+  z-index: 10;
+}
     .card {
       background: #7aa6c2;
       padding: 40px;
       border-radius: 25px;
       width: 420px;
       text-align: center;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.15);
     }
 
+    .card h2 {
+      margin-top: 0;
+      margin-bottom: 25px;
+      color: white;
+      font-size: 26px;
+    }
+
+    .card input, .card select {
+      width: 85%;
+      padding: 14px;
+      margin: 10px 0;
+      border-radius: 12px;
+      border: 1px solid rgba(0,0,0,0.1);
+      text-align: center;
+      font-size: 15px;
+      outline: none;
+      box-sizing: border-box;
+    }
+
+    .card input:focus, .card select:focus {
+      box-shadow: 0 0 8px rgba(255,255,255,0.5);
+    }
+
+    .start {
+      width: 85%;
+      padding: 14px;
+      border-radius: 12px;
+      border: none;
+      background: #1c7ed6;
+      color: white;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 15px;
+      transition: background 0.2s ease;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    .start:hover {
+      background: #1864ab;
+    }
+
+    #msg {
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      color: #2b8a3e;
+      background: #ebfbee;
+      padding: 10px;
+      border-radius: 8px;
+      font-weight: bold;
+      margin-top: 15px;
+      display: inline-block;
+    }
+
+    /* ==========================================
+       📊 DATA TRACKING DASHBOARD LOG TABLES
+    ========================================== */
     table {
       width: 100%;
       border-collapse: collapse;
       background: white;
       border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.05);
       margin-top: 20px;
     }
 
@@ -106,20 +214,78 @@
       padding: 16px;
       border-bottom: 1px solid #dee2e6;
       text-align: center;
+      font-size: 15px;
     }
 
     th {
       background: #1c7ed6;
       color: white;
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 13px;
+      letter-spacing: 0.5px;
     }
 
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    /* Real-Time Tracking State Accent Classes */
+    .normal { color: #2b8a3e; font-weight: bold; }
+    .warning { color: #e67e22; font-weight: bold; }
+    .expired { color: #c92a2a; font-weight: bold; }
+
+    .badge {
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+    .badge.unlimited {
+      background: #e7f5ff;
+      color: #1c7ed6;
+    }
+
+    .remove {
+      background: #ffc9c9;
+      color: #c92a2a;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: all 0.2s ease;
+    }
+
+    .remove:hover {
+      background: #c92a2a;
+      color: white;
+    }
+
+    /* ==========================================
+       📈 ANALYTICS COMPONENT FILTER TOOLS
+    ========================================== */
     .filter-bar {
       background: white;
       padding: 20px;
       border-radius: 12px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.05);
       display: flex;
+      align-items: center;
       gap: 15px;
       margin-top: 20px;
+    }
+
+    .filter-bar label {
+      font-weight: bold;
+      color: #495057;
+    }
+
+    .filter-bar input[type="date"] {
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #ced4da;
+      outline: none;
     }
 
     .filter-bar button, .download {
@@ -128,93 +294,134 @@
       color: white;
       border: none;
       border-radius: 8px;
+      font-weight: bold;
       cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    .filter-bar button:hover, .download:hover {
+      background: #1864ab;
     }
 
     .download {
-      margin-top: 20px;
+      margin-top: 25px;
+      display: inline-flex;
+      align-items: center;
     }
   </style>
 </head>
-
 <body>
 
-<div class="sidebar">
-  <h2>Menu</h2>
+  <div class="sidebar">
+    <h2>Menu</h2>
 
-  <div class="menu">
-    <button class="active" onclick="setActive(this); showSection('registration')">Customer Registration</button>
-    <button onclick="setActive(this); showSection('dashboard')">Active Tracking Dashboard</button>
-    <button onclick="setActive(this); showSection('reports')">Analytics Reports</button>
-    <button class="logout-btn" onclick="logout()">Logout System</button>
+    <div class="menu">
+      <button class="active" onclick="setActive(this); showSection('registration')">
+        Customer Registration
+      </button>
+      <button onclick="setActive(this); showSection('dashboard')">
+        Active Tracking Dashboard
+      </button>
+      <button onclick="setActive(this); showSection('reports')">
+        Analytics Reports
+      </button>
+      <button class="logout-btn" onclick="logout()">
+        Logout System
+      </button>
+    </div>
   </div>
-</div>
 
-<div class="main">
+  <div class="main">
 
-  <!-- REGISTRATION -->
-  <div id="registration" class="section active">
-    <div class="flex-center-container">
-      <div class="card">
-        <h2>Customer Registration</h2>
+    <div id="registration" class="section active">
+      <div class="flex-center-container">
+        <div class="card">
+          <h2>Customer Registration</h2>
 
-        <input type="text" id="name" placeholder="Customer Name">
-        <input type="text" id="contact" placeholder="Contact Number">
+          <input type="text" id="name" placeholder="Customer Name" required>
+          <input type="text" id="contact" placeholder="Contact Number">
 
-        <select id="package">
-          <option value="" disabled selected>Select Session Package</option>
-          <option value="1">30 Minutes Ticket</option>
-          <option value="2">1 Hour Ticket</option>
-          <option value="3">1.5 Hours Ticket</option>
-          <option value="4">2 Hours Ticket</option>
-          <option value="5">Unlimited Pass Ticket</option>
-        </select>
+          <select id="package" required>
+            <option value="" disabled selected>Select Session Package</option>
+            <option value="1">30 Minutes Ticket</option>
+            <option value="2">1 Hour Ticket</option>
+            <option value="3">1.5 Hours Ticket</option>
+            <option value="4">2 Hours Ticket</option>
+            <option value="5">Unlimited Pass Ticket</option>
+          </select>
 
-        <button onclick="addSession()">Start Session</button>
+          <center><button class="start" onclick="addSession()">Start Session</button></center>
 
-        <p id="msg"></p>
+          <p id="msg"></p>
+        </div>
       </div>
     </div>
-  </div>
 
-  <!-- DASHBOARD -->
-  <div id="dashboard" class="section">
-    <h2>Dashboard</h2>
-    <table>
-      <thead>
-        <tr>
-          <th>Customer</th>
-          <th>Time-In</th>
-          <th>Time-Out</th>
-          <th>Remaining</th>
-          <th>Action</th>
-        </tr>
-      </thead>
-      <tbody id="tableBody"></tbody>
-    </table>
-  </div>
-
-  <!-- REPORTS -->
-  <div id="reports" class="section">
-    <h2>Activity Reports</h2>
-
-    <div class="filter-bar">
-      <input type="date" id="startDate">
-      <input type="date" id="endDate">
-      <button onclick="loadChart()">Filter</button>
+    <div id="dashboard" class="section">
+      <h2>Dashboard</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Customer Name</th>
+            <th>Time-In</th>
+            <th>Time-Out</th>
+            <th>Remaining time</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
     </div>
 
- 
-    <div style="width:100%; max-width:850px; height:450px; margin-top:30px; background:white; padding:20px; border-radius:12px;">
-      <canvas id="chart"></canvas>
-    </div>
+    <div id="reports" class="section">
+      <h2>Activity Reports</h2>
 
-    <button class="download" onclick="downloadCSV()">Export Data</button>
+      <div class="filter-bar">
+        <label for="startDate">Start Date:</label>
+        <input type="date" id="startDate">
+
+        <label for="endDate">End Date:</label>
+        <input type="date" id="endDate">
+
+        <button onclick="loadChart()">Filter</button>
+      </div>
+
+<div style="display:flex; gap:20px; align-items:flex-start;">
+
+  <!-- ✅ Chart -->
+  <div style="flex: 3; height: 450px;">
+    <canvas id="chart"></canvas>
   </div>
 
+  <!-- ✅ Legend -->
+  <div id="chartLegend" style="
+    flex:1;
+    padding:15px;
+    background:white;
+    border-radius:12px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+  ">
+    <h3 style="
+      margin-bottom:15px;
+      font-size:18px;
+      font-weight:600;
+    ">
+      Summary
+    </h3>
+
+    <ul id="legendList" style="list-style:none; padding:0;"></ul>
+  </div>
+
+</div> <!-- ✅ END flex container -->
+``
+<div style="margin-top:20px;">
+  <button class="download" onclick="downloadCSV()">
+    Export Data
+  </button>
 </div>
 
-<script src="script.js"></script>
+  </div> <script src="script.js"></script>
 
 </body>
 </html>
+

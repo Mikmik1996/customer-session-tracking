@@ -234,7 +234,7 @@ async function loadChart() {
     const res = await fetch(url);
     const data = await res.json();
 
-    // ✅ GROUP DUPLICATES (keeps Unlimited correct)
+    // ✅ GROUP DUPLICATES (fix "Unlimited" issue)
     const grouped = {};
 
     data.forEach(d => {
@@ -248,17 +248,58 @@ async function loadChart() {
       }
     });
 
+    // ✅ Convert grouped data to arrays
     const labels = Object.keys(grouped);
     const values = Object.values(grouped);
 
+    // ✅ GENERATE LEGEND (right side)
+const legendList = document.getElementById("legendList");
+
+console.log(labels, values);
+
+if (legendList) {
+  let legendHTML = "";
+
+  labels.forEach((label, index) => {
+    legendHTML += `
+      <li style="
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        margin-bottom:10px;
+        padding:6px 10px;
+        border-radius:6px;
+        background:#f8f9fa;
+      ">
+        <span style="display:flex; align-items:center;">
+          <span style="
+            width:10px;
+            height:10px;
+            background:#1c7ed6;
+            display:inline-block;
+            border-radius:50%;
+            margin-right:8px;
+          "></span>
+          ${label}
+        </span>
+        <span style="font-weight:bold;">
+          ${values[index]} pax
+        </span>
+      </li>
+    `;
+  });
+
+  legendList.innerHTML = legendHTML;
+}
+
+    // ✅ Draw Chart
     const ctx = canvas.getContext("2d");
 
-    // ✅ Destroy old chart
+    // Remove old chart before drawing new one
     if (chart) {
       chart.destroy();
     }
 
-    // ✅ Draw chart ONLY (no legend, no summary)
     chart = new Chart(ctx, {
       type: "bar",
       data: {
@@ -286,7 +327,6 @@ async function loadChart() {
     console.error("❌ Chart load error:", err);
   }
 }
-``
 
 
 /* ==========================================
