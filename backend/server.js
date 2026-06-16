@@ -11,19 +11,28 @@ app.use(express.json());
 app.use(cors());
 app.use(express.static(path.join(__dirname, "../frontend")));
 
-// ✅ DATABASE CONNECTION (CORRECTED PRODUCTION ENV PRIORITIZATION)
-const pool = mysql.createPool({
-  host: process.env.MYSQLHOST || "127.0.0.1",
-  user: process.env.MYSQLUSER || "root",
-  password: process.env.MYSQLPASSWORD || "mfEHOcBYWiLNyWmtQgFJfqQjjKVOetrK", 
-  database: process.env.MYSQLDATABASE || "railway",
-  port: parseInt(process.env.MYSQLPORT || "3306"),
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0
-});
+// ✅ DATABASE CONNECTION (CORRECTED FOR PRODUCTION RAILWAY DEPLOYMENTS)
+let pool;
+if (process.env.MYSQL_URL) {
+  // Production: Connect via Railway's automatic internal connection URL string
+  console.log("Connecting using production MYSQL_URL...");
+  pool = mysql.createPool(process.env.MYSQL_URL);
+} else {
+  // Local Fallback: For testing on your own computer
+  console.log("Connecting using local configuration fallback...");
+  pool = mysql.createPool({
+    host: process.env.MYSQLHOST || "127.0.0.1",
+    user: process.env.MYSQLUSER || "root",
+    password: process.env.MYSQLPASSWORD || "mfEHOcBYWiLNyWmtQgFJfqQjjKVOetrK", 
+    database: process.env.MYSQLDATABASE || "railway",
+    port: parseInt(process.env.MYSQLPORT || "3306"),
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0
+  });
+}
 
-// ✅ TEST CONNECTION (OPTIONAL BUT SAFE)
+// ✅ TEST CONNECTION 
 (async () => {
   try {
     const conn = await pool.getConnection();
@@ -110,7 +119,7 @@ app.post("/api/sessions/:id/end", async (req, res) => {
 });
 
 /* ===========================
-   ✅ EXPORT CSV (FIXED & FORMATTED FOR ASIA/MANILA)
+   ✅ EXPORT CSV (CLEAN & FORMATTED FOR ASIA/MANILA)
 =========================== */
 app.get("/api/export", async (req, res) => {
   try {
@@ -131,6 +140,7 @@ app.get("/api/export", async (req, res) => {
       else if (row.package_id == 4) { packageName = "2 hours"; durationMins = 120; }
       else if (row.package_id == 5) { packageName = "Unlimited"; durationMins = 999; }
 
+      // Force clean localized formatting in Asia/Manila Timezone
       const dateString = startDate.toLocaleDateString("en-PH", {
         timeZone: "Asia/Manila",
         year: "numeric",
@@ -148,6 +158,7 @@ app.get("/api/export", async (req, res) => {
 
       let endTimeString = "-";
       if (durationMins < 999) {
+        // Regular packages: Calculate expected end time mathematically
         const endDate = new Date(startDate.getTime() + durationMins * 60000);
         endTimeString = endDate.toLocaleTimeString("en-PH", {
           timeZone: "Asia/Manila",
@@ -157,6 +168,7 @@ app.get("/api/export", async (req, res) => {
           hour12: true
         });
       } else if (row.end_time) {
+        // Unlimited packages: Pull exact timestamp recorded when you clicked "Remove"
         const removeDate = new Date(row.end_time);
         endTimeString = removeDate.toLocaleTimeString("en-PH", {
           timeZone: "Asia/Manila",
@@ -177,11 +189,12 @@ app.get("/api/export", async (req, res) => {
       };
     });
 
+    // Setup pristine 6 columns requested
     const headers = ["Date", "Customer Name", "Contact Number", "Package", "Start Time", "End Time"];
     let csvContent = headers.join(",") + "\n";
 
     cleanedRows.forEach(r => {
-      // Force double quotes to prevent spreadsheet formatting engines from reading commas as column breaks
+      // Escape strings securely inside literal quotes to protect against cell layout bleeding
       const cleanName = String(r.name).replace(/"/g, '""');
       const cleanContact = String(r.contact).replace(/"/g, '""');
       
@@ -196,7 +209,7 @@ app.get("/api/export", async (req, res) => {
       csvContent += line + "\n";
     });
 
-    // Anti-caching instructions for web browsers
+    // Enforce explicit cache breaking headers so web browsers pull fresh file generation structures
     res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
     res.setHeader("Pragma", "no-cache");
     res.setHeader("Expires", "0");
@@ -216,7 +229,7 @@ app.get("/api/export", async (req, res) => {
 =========================== */
 app.get("/api/chart-data", async (req, res) => {
   try {
-    const [rows] = await pool.query(`
+    const [rows] = await pool.query suicide(`
       SELECT 
         CASE 
           WHEN package_id = 1 THEN '30 mins'
