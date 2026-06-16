@@ -1,55 +1,53 @@
-// 🔥 MUST BE AT TOP
-console.log("🔥 BACKEND FILE IS RUNNING 🔥");
-
 const express = require("express");
 const mysql = require("mysql2/promise");
-const cors = require("cors");
 const path = require("path");
+const cors = require("cors");
 
 const app = express();
 app.use(express.json());
 app.use(cors());
+
+// Serve all frontend static files automatically
 app.use(express.static(path.join(__dirname, "../frontend")));
 
-// ✅ FIXED DATABASE CONNECTION (MANUAL CLUSTER FALLBACKS TO PREVENT 127.0.0.1 CRASHES)
+/* ==========================================
+   🎯 DATABASE CONFIGURATION (RAILWAY POOL)
+========================================== */
 const pool = mysql.createPool({
-  host: process.env.MYSQLHOST || process.env.MYSQL_HOST || "mysql.railway.internal",
-  user: process.env.MYSQLUSER || process.env.MYSQL_USER || "root",
-  password: process.env.MYSQLPASSWORD || process.env.MYSQL_PASSWORD || "mfEHOcBYWiLNyWmtQgFJfqQjjKVOetrK",
-  database: process.env.MYSQLDATABASE || process.env.MYSQL_DATABASE || "railway",
-  port: parseInt(process.env.MYSQLPORT || process.env.MYSQL_PORT || "3306"),
+  host: process.env.MYSQLHOST || "localhost",
+  user: process.env.MYSQLUSER || "root",
+  password: process.env.MYSQLPASSWORD || "",
+  database: process.env.MYSQLDATABASE || "wiijum_db",
+  port: process.env.MYSQLPORT ? parseInt(process.env.MYSQLPORT) : 3306,
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0
 });
 
-// ✅ TEST DATABASE CONNECTION
+// Test database connectivity immediately upon initialization
 (async () => {
   try {
-    const conn = await pool.getConnection();
-    console.log("✅ Connected to MySQL Database Server Successfully.");
-    conn.release();
+    const connection = await pool.getConnection();
+    console.log("🚀 DATABASE CONNECTED SUCCESSFULLY TO RAILWAY MYSQL POOL!");
+    connection.release();
   } catch (err) {
-    console.error("❌ MySQL connection failed:", err);
+    console.error("⚠️ Database connection error. Operating in local fallback mode:", err.message);
   }
 })();
 
-/* ===========================
-   ✅ LOGIN (WITH DATABASE FAILSAFE FALLBACK)
-=========================== */
+/* ==========================================
+   🔑 USER ACCESS & FAILSAFE AUTHENTICATION
+========================================== */
 app.post("/api/login", async (req, res) => {
   const { username, password } = req.body;
+  console.log(`🔑 Login validation checkpoint for: ${username}`);
 
-  console.log(`🔑 Login attempt received for user: ${username}`);
-
-  // HARDCODED MASTER CREDENTIALS CRITICAL FALLBACK
-  // This guarantees you can ALWAYS log in, bypassing any temporary database connection drops!
+  // Hardcoded Master Admin Override Bypass
   if (username === "admin" && password === "jump123") {
-    console.log("🎯 Master login successful via hardcoded fallback!");
+    console.log("🎯 Access granted via hardcoded administrator bypass.");
     return res.json({ success: true });
   }
 
-  // Optional: If you want to check your MySQL 'users' or 'staff' table as a secondary option
   try {
     const [rows] = await pool.query(
       "SELECT * FROM staff WHERE username = ? AND password = ?", 
@@ -57,249 +55,176 @@ app.post("/api/login", async (req, res) => {
     );
 
     if (rows.length > 0) {
-      console.log("✅ Login successful via database records.");
       res.json({ success: true });
     } else {
-      console.log("❌ Login failed: Credentials do not match master or database records.");
       res.json({ success: false });
     }
-  } catch (dbErr) {
-    console.error("⚠️ Database down during login check, rejecting non-master account:", dbErr.message);
-    // If database query fails but it wasn't the master account, deny access safely
+  } catch (err) {
+    console.error("⚠️ Fallback validation active. Rejecting query request.");
     res.json({ success: false });
   }
 });
 
-/* ===========================
-   ✅ ADD SESSION
-=========================== */
-app.post("/api/sessions", async (req, res) => {
-  try {
-    const { client_name, client_contact, package_id, staff_id } = req.body;
-
-    await pool.query(
-      `INSERT INTO sessions 
-      (client_name, client_contact, package_id, staff_id, start_time)
-      VALUES (?, ?, ?, ?, NOW())`,
-      [client_name, client_contact, package_id, staff_id || 1]
-    );
-
-    console.log("✅ Session created");
-    res.json({ success: true });
-
-  } catch (err) {
-    console.error("❌ Add session error:", err);
-    res.status(500).json({ error: "Server error" });
-  }
-});
-
-/* ===========================
-   ✅ ACTIVE SESSIONS
-=========================== */
+/* ==========================================
+   📊 ACTIVE REAL-TIME DASHBOARD SESSIONS
+========================================== */
 app.get("/api/sessions/active", async (req, res) => {
   try {
-    const [rows] = await pool.query(`
-      SELECT id, client_name, start_time, package_id
-      FROM sessions
-      WHERE end_time IS NULL
-    `);
-
+    // Queries only open customer track sessions that haven't been manually deleted/ended
+    const [rows] = await pool.query(
+      "SELECT * FROM customer_sessions WHERE end_time IS NULL ORDER BY start_time DESC"
+    );
     res.json(rows);
-
   } catch (err) {
-    console.error("❌ Active sessions error:", err);
-    res.status(500).json({ error: "Server error" });
+    console.error("❌ Error fetching active panel layout row items:", err.message);
+    res.status(500).json({ error: "Failed to load active tracking rows" });
   }
 });
 
-/* ===========================
-   ✅ END SESSION
-=========================== */
-app.post("/api/sessions/:id/end", async (req, res) => {
+/* ==========================================
+   ➕ CREATE NEW SESSIONS
+========================================== */
+app.post("/api/sessions", async (req, res) => {
+  const { client_name, client_contact, package_id, staff_id } = req.body;
   try {
-    const { id } = req.params;
-
     await pool.query(
-      "UPDATE sessions SET end_time = NOW() WHERE id = ?",
+      "INSERT INTO customer_sessions (client_name, client_contact, package_id, staff_id, start_time) VALUES (?, ?, ?, ?, NOW())",
+      [client_name, client_contact, package_id, staff_id || 1]
+    );
+    res.json({ success: true });
+  } catch (err) {
+    console.error("❌ Error saving transaction:", err.message);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/* ==========================================
+   🛑 TERMINATE / REMOVE TRACKING SESSIONS
+========================================== */
+app.post("/api/sessions/:id/end", async (req, res) => {
+  const { id } = req.params;
+  try {
+    await pool.query(
+      "UPDATE customer_sessions SET end_time = NOW() WHERE id = ?",
       [id]
     );
-
     res.json({ success: true });
-
   } catch (err) {
-    console.error("❌ End session error:", err);
-    res.status(500).json({ error: "Server error" });
+    console.error("❌ Error concluding customer timeline context:", err.message);
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
-/* ===========================
-   ✅ EXPORT CSV (WITH DATE FILTERING SUPPORT)
-=========================== */
-app.get("/api/export", async (req, res) => {
-  try {
-    const { start, end } = req.query;
-    
-    // Build explicit filtering query conditions for Manila Timezone boundary blocks
-    let sql = `SELECT client_name, client_contact, package_id, start_time, end_time FROM sessions`;
-    let params = [];
+/* ==========================================
+   📈 ANALYTICS CHART METRICS (FILTER READY)
+========================================== */
+app.get("/api/chart-data", async (req, res) => {
+  const { start, end } = req.query;
+  
+  let sql = `
+    SELECT 
+      CASE 
+        WHEN package_id = 1 THEN '30 mins'
+        WHEN package_id = 2 THEN '1 hour'
+        WHEN package_id = 3 THEN '1.5 hours'
+        WHEN package_id = 4 THEN '2 hours'
+        WHEN package_id = 5 THEN 'Unlimited'
+        ELSE 'Unknown'
+      ENDFOR AS package_name,
+      COUNT(*) AS count 
+    FROM customer_sessions
+  `;
+  
+  const params = [];
+  
+  // Convert standard UTC raw timestamps directly into Manila local business dates
+  if (start && end) {
+    sql += " WHERE DATE(CONVERT_TZ(start_time, '+00:00', '+08:00')) BETWEEN ? AND ? ";
+    params.push(start, end);
+  }
+  
+  sql += " GROUP BY package_id ORDER BY package_id ASC";
 
-    if (start && end) {
-      sql += ` WHERE CONVERT_TZ(start_time, '+00:00', '+08:00') BETWEEN ? AND ?`;
-      params.push(`${start} 00:00:00`, `${end} 23:59:59`);
-    }
-    
-    sql += ` ORDER BY start_time DESC`;
+  // Clean up standard SQL keyword generation formatting conflicts
+  const sanitizedSql = sql.replace("ENDFOR AS package_name", "END AS package_name");
+
+  try {
+    const [rows] = await pool.query(sanitizedSql, params);
+    res.json(rows);
+  } catch (err) {
+    console.error("❌ Analytics aggregator compilation failed:", err.message);
+    res.status(500).json([]);
+  }
+});
+
+/* ==========================================
+   📥 EXPORT LOGS ROUTE (FILTERS COMPATIBLE)
+========================================== */
+app.get("/api/export", async (req, res) => {
+  const { start, end } = req.query;
+
+  let sql = `
+    SELECT 
+      client_name, 
+      client_contact,
+      CASE 
+        WHEN package_id = 1 THEN '30 mins'
+        WHEN package_id = 2 THEN '1 hour'
+        WHEN package_id = 3 THEN '1.5 hours'
+        WHEN package_id = 4 THEN '2 hours'
+        WHEN package_id = 5 THEN 'Unlimited'
+        ELSE 'Other'
+      END AS package_name,
+      CONVERT_TZ(start_time, '+00:00', '+08:00') AS local_start,
+      CONVERT_TZ(end_time, '+00:00', '+08:00') AS local_end
+    FROM customer_sessions
+  `;
+
+  const params = [];
+  if (start && end) {
+    sql += " WHERE DATE(CONVERT_TZ(start_time, '+00:00', '+08:00')) BETWEEN ? AND ? ";
+    params.push(start, end);
+  }
+
+  sql += " ORDER BY start_time DESC";
+
+  try {
     const [rows] = await pool.query(sql, params);
 
-    const cleanedRows = rows.map(row => {
-      const startDate = new Date(row.start_time);
+    res.setHeader("Content-Type", "text/csv");
+    res.setHeader("Content-Disposition", `attachment; filename=Wiijum_Report_${start || "All"}_to_${end || "All"}.csv`);
+
+    let csvContent = "Date,Customer Name,Contact Number,Package,Start Time,End Time\n";
+
+    rows.forEach(row => {
+      const startDateObj = new Date(row.local_start);
+      const dateString = !isNaN(startDateObj) ? startDateObj.toLocaleDateString("en-PH") : "-";
+      const startTimeString = !isNaN(startDateObj) ? startDateObj.toLocaleTimeString("en-PH", { hour: '2-digit', minute: '2-digit' }) : "-";
       
-      let packageName = "Unknown";
-      let durationMins = 30;
-      if (row.package_id == 1) { packageName = "30 mins"; durationMins = 30; }
-      else if (row.package_id == 2) { packageName = "1 hour"; durationMins = 60; }
-      else if (row.package_id == 3) { packageName = "1.5 hours"; durationMins = 90; }
-      else if (row.package_id == 4) { packageName = "2 hours"; durationMins = 120; }
-      else { packageName = "Unlimited"; durationMins = 999; }
-
-      const dateString = startDate.toLocaleDateString("en-PH", {
-        timeZone: "Asia/Manila",
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit"
-      });
-
-      const startTimeString = startDate.toLocaleTimeString("en-PH", {
-        timeZone: "Asia/Manila",
-        hour: "numeric",
-        minute: "2-digit",
-        second: "2-digit",
-        hour12: true
-      });
-
       let endTimeString = "-";
-      if (durationMins < 999) {
-        const endDate = new Date(startDate.getTime() + durationMins * 60000);
-        endTimeString = endDate.toLocaleTimeString("en-PH", {
-          timeZone: "Asia/Manila",
-          hour: "numeric",
-          minute: "2-digit",
-          second: "2-digit",
-          hour12: true
-        });
-      } else if (row.end_time) {
-        const removeDate = new Date(row.end_time);
-        endTimeString = removeDate.toLocaleTimeString("en-PH", {
-          timeZone: "Asia/Manila",
-          hour: "numeric",
-          minute: "2-digit",
-          second: "2-digit",
-          hour12: true
-        });
+      if (row.local_end) {
+        const endDateObj = new Date(row.local_end);
+        if (!isNaN(endDateObj)) {
+          endTimeString = endDateObj.toLocaleTimeString("en-PH", { hour: '2-digit', minute: '2-digit' });
+        }
       }
 
-      return {
-        date: dateString,
-        name: row.client_name || "N/A",
-        contact: row.client_contact || "N/A",
-        package: packageName,
-        start: startTimeString,
-        end: endTimeString
-      };
+      csvContent += `"${dateString}","${row.client_name}","${row.client_contact}","${row.package_name}","${startTimeString}","${endTimeString}"\n`;
     });
 
-    const headers = ["Date", "Customer Name", "Contact Number", "Package", "Start Time", "End Time"];
-    let csvContent = headers.join(",") + "\n";
-
-    cleanedRows.forEach(r => {
-      const cleanName = String(r.name).replace(/"/g, '""');
-      const cleanContact = String(r.contact).replace(/"/g, '""');
-      
-      const line = [
-        `"${r.date}"`,
-        `"${cleanName}"`,
-        `"${cleanContact}"`,
-        `"${r.package}"`,
-        `"${r.start}"`,
-        `"${r.end}"`
-      ].join(",");
-      csvContent += line + "\n";
-    });
-
-    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
-    res.setHeader("Pragma", "no-cache");
-    res.setHeader("Expires", "0");
-
-    res.header("Content-Type", "text/csv");
-    res.attachment("session_report.csv");
     res.send(csvContent);
-
   } catch (err) {
-    console.error("❌ Export error:", err);
-    res.status(500).json({ error: "Server error" });
+    console.error("❌ CSV engine compiler error:", err.message);
+    res.status(500).send("Error exporting business metric reports csv");
   }
 });
 
-/* ===========================
-   ✅ CHART DATA (WITH DATE FILTERING & DUPLICATE UNLIMITED FIX)
-=========================== */
-app.get("/api/chart-data", async (req, res) => {
-  try {
-    const { start, end } = req.query;
-
-    let sql = `
-      SELECT 
-        CASE 
-          WHEN package_id = 1 THEN '30 mins'
-          WHEN package_id = 2 THEN '1 hour'
-          WHEN package_id = 3 THEN '1.5 hours'
-          WHEN package_id = 4 THEN '2 hours'
-          ELSE 'Unlimited'
-        END AS package_name,
-        COUNT(*) AS count
-      FROM sessions
-    `;
-    
-    let params = [];
-    if (start && end) {
-      // Filter cleanly converting UTC system timestamps to localized Manila context strings
-      sql += ` WHERE CONVERT_TZ(start_time, '+00:00', '+08:00') BETWEEN ? AND ?`;
-      params.push(`${start} 00:00:00`, `${end} 23:59:59`);
-    }
-
-    // Explicitly group cleanly by the string outcome name to eliminate duplicate Unlimited bar fragmentation!
-    sql += `
-      GROUP BY 
-        CASE 
-          WHEN package_id = 1 THEN '30 mins'
-          WHEN package_id = 2 THEN '1 hour'
-          WHEN package_id = 3 THEN '1.5 hours'
-          WHEN package_id = 4 THEN '2 hours'
-          ELSE 'Unlimited'
-        END
-    `;
-
-    const [rows] = await pool.query(sql, params);
-    res.json(rows);
-
-  } catch (err) {
-    console.error("❌ Chart error:", err);
-    res.status(500).json({ error: "Server error" });
-  }
-});
-
-/* ===========================
-   ✅ FRONTEND ROUTE (LAST)
-=========================== */
+// Fallback Wildcard route for UI asset redirection mapping
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "../frontend/index.html"));
 });
 
-/* ===========================
-   🚀 START SERVER
-=========================== */
-const PORT = process.env.PORT || 3000;
-
+const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
-  console.log("🚀 Server running on port " + PORT);
+  console.log(`🚀 Server fully operational and running live on port ${PORT}`);
 });
