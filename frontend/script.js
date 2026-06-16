@@ -234,7 +234,7 @@ async function loadChart() {
     const res = await fetch(url);
     const data = await res.json();
 
-    // ✅ FIX: GROUP DUPLICATES (like "Unlimited")
+    // ✅ GROUP DUPLICATES (fix "Unlimited" issue)
     const grouped = {};
 
     data.forEach(d => {
@@ -248,18 +248,35 @@ async function loadChart() {
       }
     });
 
-    // ✅ Convert to arrays
+    // ✅ Convert grouped data to arrays
     const labels = Object.keys(grouped);
     const values = Object.values(grouped);
 
+    // ✅ GENERATE LEGEND (right side)
+    const legendList = document.getElementById("legendList");
+
+    if (legendList) {
+      let legendHTML = "";
+
+      labels.forEach((label, index) => {
+        legendHTML += `
+          <li style="margin-bottom:8px; font-size:14px;">
+            <strong>${label}</strong> - ${values[index]} pax
+          </li>
+        `;
+      });
+
+      legendList.innerHTML = legendHTML;
+    }
+
+    // ✅ Draw Chart
     const ctx = canvas.getContext("2d");
 
-    // ✅ Destroy old chart safely
+    // Remove old chart before drawing new one
     if (chart) {
       chart.destroy();
     }
 
-    // ✅ Create chart
     chart = new Chart(ctx, {
       type: "bar",
       data: {
@@ -284,7 +301,7 @@ async function loadChart() {
     });
 
   } catch (err) {
-    console.error("❌ Analytics chart visualization refresh error caught:", err);
+    console.error("❌ Chart load error:", err);
   }
 }
 

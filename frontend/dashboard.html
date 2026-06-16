@@ -367,14 +367,27 @@
         <button onclick="loadChart()">Filter</button>
       </div>
 
-      <div style="width:100%; max-width:850px; height:450px; margin-top:30px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.05);">
-        <canvas id="chart"></canvas>
-      </div>
+<div style="display:flex; gap:20px;">
 
-      <button class="download" onclick="downloadCSV()">
-        Export Data
-      </button>
-    </div>
+  <!-- Chart -->
+  <div style="flex: 3; height: 450px;">
+    <canvas id="chart"></canvas>
+  </div>
+
+  <!-- ✅ Legend (right side) -->
+  <div id="chartLegend" style="flex: 1; padding: 10px;">
+    <h3 style="margin-bottom:10px;">Summary</h3>
+    <ul id="legendList" style="list-style:none; padding:0;"></ul>
+  </div>
+    
+
+</div> <!-- END flex container -->
+
+<div style="margin-top:20px;">
+  <button class="download" onclick="downloadCSV()">
+    Export Data
+  </button>
+</div>
 
   </div> <script src="script.js"></script>
 
