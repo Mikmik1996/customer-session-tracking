@@ -256,37 +256,41 @@ async function loadChart() {
 const legendList = document.getElementById("legendList");
 
 console.log(labels, values);
+
 if (legendList) {
   let legendHTML = "";
 
- labels.forEach((label, index) => {
-  legendHTML += `
-    <li style="
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      margin-bottom:10px;
-      padding:6px 10px;
-      border-radius:6px;
-      background:#f8f9fa;
-    ">
-      <span style="display:flex; align-items:center;">
-        <span style="
-          width:10px;
-          height:10px;
-          background:#1c7ed6;
-          display:inline-block;
-          border-radius:50%;
-          margin-right:8px;
-        "></span>
-        ${label}
-      </span>
-      <span style="font-weight:bold;">
-        ${values[index]} pax
-      </span>
-    </li>
-  `;
-});
+  labels.forEach((label, index) => {
+    legendHTML += `
+      <li style="
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        margin-bottom:10px;
+        padding:6px 10px;
+        border-radius:6px;
+        background:#f8f9fa;
+      ">
+        <span style="display:flex; align-items:center;">
+          <span style="
+            width:10px;
+            height:10px;
+            background:#1c7ed6;
+            display:inline-block;
+            border-radius:50%;
+            margin-right:8px;
+          "></span>
+          ${label}
+        </span>
+        <span style="font-weight:bold;">
+          ${values[index]} pax
+        </span>
+      </li>
+    `;
+  });
+
+  legendList.innerHTML = legendHTML;
+}
 
     // ✅ Draw Chart
     const ctx = canvas.getContext("2d");
@@ -384,6 +388,3 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 
-document.addEventListener("DOMContentLoaded", () => {
-  loadChart();
-});
