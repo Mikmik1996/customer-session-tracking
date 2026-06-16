@@ -1,13 +1,25 @@
 console.log("✅ SCRIPT LOADED");
 
 /* =======================
-   ✅ TIME FORMAT (NEW)
+   ✅ TIME FORMAT (UPDATED FOR HH:MM:SS)
 ======================= */
-function convertMinutesToHours(mins) {
-  const hours = Math.floor(mins / 60);
-  const remainingMinutes = mins % 60;
+function formatRemainingTime(totalSeconds) {
+  if (totalSeconds <= 0) return "00:00:00";
 
-  return `${hours}h ${remainingMinutes}m`;
+  // 1. Calculate hours, minutes, and seconds
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = Math.floor(totalSeconds % 60);
+
+  // 2. Pad with leading zeros so it always looks uniform (e.g., 01:24:06)
+  const paddedHours = String(hours).padStart(2, '0');
+  const paddedMinutes = String(minutes).padStart(2, '0');
+  const paddedSeconds = String(seconds).padStart(2, '0');
+
+  // If you want to hide hours when it's 0 (e.g., "16:12"), use this return instead:
+  // return hours > 0 ? `${paddedHours}:${paddedMinutes}:${paddedSeconds}` : `${paddedMinutes}:${paddedSeconds}`;
+
+  return `${paddedHours}:${paddedMinutes}:${paddedSeconds}`;
 }
 
 /* =======================
@@ -89,7 +101,7 @@ async function addSession() {
 }
 
 /* =======================
-   ✅ DASHBOARD
+   ✅ DASHBOARD (UPDATED RENDERING)
 ======================= */
 async function loadSessions() {
   try {
@@ -101,7 +113,6 @@ async function loadSessions() {
     }
 
     const data = await res.json();
-
     let html = "";
 
     data.forEach(s => {
@@ -118,9 +129,6 @@ async function loadSessions() {
 
       let remain = (duration * 60) - ((now - start) / 1000);
       if (remain < 0) remain = 0;
-
-      const mins = Math.floor(remain / 60);
-      const secs = Math.floor(remain % 60);
 
       const timeIn = start.toLocaleTimeString("en-PH", {
         timeZone: "Asia/Manila",
@@ -156,7 +164,7 @@ async function loadSessions() {
           <td>${timeIn}</td>
           <td>${timeOut}</td>
           <td class="${color}">
-            ${duration >= 999 ? "Unlimited" : convertMinutesToHours(mins)}
+            ${duration >= 999 ? "Unlimited" : formatRemainingTime(remain)}
           </td>
           <td>
             <button class="remove" onclick="removeSession(${s.id})">Remove</button>
