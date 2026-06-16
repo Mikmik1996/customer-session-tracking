@@ -266,7 +266,34 @@ function downloadCSV() {
 }
 
 /* =======================
-   ✅ AUTO LOAD
+   ✅ AUTO LOAD & ROUTER INITIALIZATION
 ======================= */
+// 1. Establish your real-time active row background refresh loop ticker
 setInterval(loadSessions, 2000);
-loadSessions();
+
+// 2. RUN THIS IMMEDIATELY ON MOUNT TO ENSURE INTERFACE UNHIDES CORRECTLY!
+function initializeDashboardRouting() {
+  console.log("🚦 Initializing application interface view routing...");
+  
+  // Load current session records from the database
+  loadSessions();
+
+  // If the browser URL currently ends with #dashboard, automatically reveal the layout panels!
+  if (window.location.hash === "#dashboard") {
+    // Find the Customer Registration sidebar button element to make it look selected
+    const firstMenuBtn = document.querySelector(".sidebar .menu button");
+    if (firstMenuBtn) {
+      setActive(firstMenuBtn);
+    }
+    
+    // Unhide the primary Registration workspace panel cleanly
+    showSection("registration");
+    console.log("🔓 Application workspace panels unhidden successfully!");
+  } else {
+    // Default fallback to registration screen if no hash string exists
+    showSection("registration");
+  }
+}
+
+// Fire off the unhide initialization process immediately right now
+initializeDashboardRouting();
