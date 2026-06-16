@@ -11,38 +11,30 @@ app.use(cors());
 app.use(express.static(path.join(__dirname, "../frontend")));
 
 /* ==========================================
-    🎯 FIXED DATABASE CONFIGURATION PARSER
+    🎯 FORCE-LINKED DATABASE CONNECTION POOL
 ========================================== */
-const getDatabaseConfig = () => {
-  // Directly grab the exact uppercase keys visible on your Railway Dashboard
-  const host = process.env.MYSQLHOST || "127.0.0.1";
-  const user = process.env.MYSQLUSER || "root";
-  const password = process.env.MYSQLPASSWORD || "";
-  const database = process.env.MYSQLDATABASE || "railway";
-  const port = parseInt(process.env.MYSQLPORT || "3306", 10);
+// Look for Railway's unified connection URLs first
+const dbUri = process.env.MYSQL_URL || process.env.MYSQLURL || process.env.DATABASE_URL;
 
-  console.log(`🔌 Attempting link -> Host: ${host}, Port: ${port}, User: ${user}, DB: ${database}`);
+let pool;
 
-  return { host, user, password, database, port };
-};
-
-// Establish configuration parameters
-const baseConfig = getDatabaseConfig();
-
-// Create primary application query connection pool instance based on resolved configurations
-const pool = baseConfig.uri 
-  ? mysql.createPool(baseConfig.uri)
-  : mysql.createPool({
-      host: baseConfig.host,
-      user: baseConfig.user,
-      password: baseConfig.password,
-      database: baseConfig.database,
-      port: baseConfig.port,
-      waitForConnections: true,
-      connectionLimit: 5,         // Lowered to prevent connection exhaustion in production
-      queueLimit: 0,
-      connectTimeout: 20000       // Extended to 20s to allow slower internal container meshes to initialize safely
-    });
+if (dbUri) {
+  console.log("🔌 Production Database initializing via direct URL String string wrapper...");
+  pool = mysql.createPool(dbUri);
+} else {
+  console.log("⚠️ Direct URL string missing! Attempting manual parameter block mapping...");
+  pool = mysql.createPool({
+    host: process.env.MYSQLHOST || "127.0.0.1",
+    user: process.env.MYSQLUSER || "root",
+    password: process.env.MYSQLPASSWORD || "",
+    database: process.env.MYSQLDATABASE || "railway",
+    port: parseInt(process.env.MYSQLPORT || "3306", 10),
+    waitForConnections: true,
+    connectionLimit: 5,
+    queueLimit: 0,
+    connectTimeout: 20000
+  });
+}
 
 // Track layout schema deployment readiness state globally
 let tablesReady = false;
