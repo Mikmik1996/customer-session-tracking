@@ -70,7 +70,6 @@ app.post("/api/login", async (req, res) => {
 ========================================== */
 app.get("/api/sessions/active", async (req, res) => {
   try {
-    // Queries only open customer track sessions that haven't been manually deleted/ended
     const [rows] = await pool.query(
       "SELECT * FROM customer_sessions WHERE end_time IS NULL ORDER BY start_time DESC"
     );
@@ -121,6 +120,7 @@ app.post("/api/sessions/:id/end", async (req, res) => {
 app.get("/api/chart-data", async (req, res) => {
   const { start, end } = req.query;
   
+  // ✅ FIXED: Changed ENDFOR to END so MySQL compiles smoothly without crashing
   let sql = `
     SELECT 
       CASE 
@@ -130,14 +130,14 @@ app.get("/api/chart-data", async (req, res) => {
         WHEN package_id = 4 THEN '2 hours'
         WHEN package_id = 5 THEN 'Unlimited'
         ELSE 'Unknown'
-      ENDFOR AS package_name,
+      END AS package_name,
       COUNT(*) AS count 
     FROM customer_sessions
   `;
   
   const params = [];
   
-  // Convert standard UTC raw timestamps directly into Manila local business dates
+  // Apply date range filters if specified
   if (start && end) {
     sql += " WHERE DATE(CONVERT_TZ(start_time, '+00:00', '+08:00')) BETWEEN ? AND ? ";
     params.push(start, end);
@@ -145,15 +145,12 @@ app.get("/api/chart-data", async (req, res) => {
   
   sql += " GROUP BY package_id ORDER BY package_id ASC";
 
-  // Clean up standard SQL keyword generation formatting conflicts
-  const sanitizedSql = sql.replace("ENDFOR AS package_name", "END AS package_name");
-
   try {
-    const [rows] = await pool.query(sanitizedSql, params);
+    const [rows] = await pool.query(sql, params);
     res.json(rows);
   } catch (err) {
     console.error("❌ Analytics aggregator compilation failed:", err.message);
-    res.status(500).json([]);
+    res.status(500).json([]); // Return an empty array instead of crashing if the query fails
   }
 });
 
