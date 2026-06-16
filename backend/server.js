@@ -35,14 +35,37 @@ const pool = mysql.createPool({
 })();
 
 /* ===========================
-   ✅ LOGIN
+   ✅ LOGIN (WITH DATABASE FAILSAFE FALLBACK)
 =========================== */
-app.post("/api/login", (req, res) => {
+app.post("/api/login", async (req, res) => {
   const { username, password } = req.body;
 
+  console.log(`🔑 Login attempt received for user: ${username}`);
+
+  // HARDCODED MASTER CREDENTIALS CRITICAL FALLBACK
+  // This guarantees you can ALWAYS log in, bypassing any temporary database connection drops!
   if (username === "admin" && password === "jump123") {
-    res.json({ success: true });
-  } else {
+    console.log("🎯 Master login successful via hardcoded fallback!");
+    return res.json({ success: true });
+  }
+
+  // Optional: If you want to check your MySQL 'users' or 'staff' table as a secondary option
+  try {
+    const [rows] = await pool.query(
+      "SELECT * FROM staff WHERE username = ? AND password = ?", 
+      [username, password]
+    );
+
+    if (rows.length > 0) {
+      console.log("✅ Login successful via database records.");
+      res.json({ success: true });
+    } else {
+      console.log("❌ Login failed: Credentials do not match master or database records.");
+      res.json({ success: false });
+    }
+  } catch (dbErr) {
+    console.error("⚠️ Database down during login check, rejecting non-master account:", dbErr.message);
+    // If database query fails but it wasn't the master account, deny access safely
     res.json({ success: false });
   }
 });
