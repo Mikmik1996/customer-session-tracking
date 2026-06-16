@@ -21,21 +21,20 @@
       background-size: cover;
     }
 
-    
-.login-container {
+    .login-container {
   background: rgba(255, 255, 255, 0.95);
   padding: 40px;
   border-radius: 20px;
-  width: 400px; /* ✅ slightly wider */
+  width: 420px; /* ✅ slightly wider */
 
   display: flex;
   flex-direction: column;
   align-items: center;
 
   box-shadow: 0 20px 40px rgba(0,0,0,0.3);
-  backdrop-filter: blur(8px);
 }
 
+/* ✅ Ensure form centers everything */
 .login-container form {
   display: flex;
   flex-direction: column;
@@ -43,14 +42,13 @@
   width: 100%;
 }
 
-/* ✅ ALL elements same width */
+/* ✅ SAME WIDTH for ALL elements */
 .login-container input,
-.password-wrapper,
-.login-container button {
-  width: 100%;
+.password-wrapper {
+  width: 90%;
 }
 
-/* ✅ REMOVE duplicate, keep ONLY this */
+/* ✅ Password wrapper fix (IMPORTANT) */
 .password-wrapper {
   position: relative;
 }
@@ -58,35 +56,56 @@
 /* ✅ Inputs */
 .login-container input {
   padding: 14px;
-  margin: 12px 0; /* ✅ spacing improved */
+  margin: 12px 0;
   border-radius: 10px;
   border: 1px solid #ccc;
   font-size: 15px;
   outline: none;
+  transition: 0.25s;
+  box-sizing: border-box; /* ✅ FIX alignment */
 }
 
+/* ✅ Focus glow */
 .login-container input:focus {
   border-color: #1c7ed6;
   box-shadow: 0 0 8px rgba(28,126,214,0.3);
 }
 
-/* ✅ Toggle */
+/* ✅ Toggle "Show" */
 .toggle-password {
   position: absolute;
-  right: 12px;
+  right: 15px;
   top: 50%;
   transform: translateY(-50%);
-  cursor: pointer;
   font-size: 14px;
   color: #666;
+  cursor: pointer;
 }
 
-/* ✅ Button */
+/* ✅ Login button (FIXED) */
 .login-container button {
-  margin-top: 15px;
+  width: 70%; /* ✅ smaller button */
   padding: 14px;
+  margin-top: 18px;
   border-radius: 10px;
+  border: none;
+
+  background: #1c7ed6; /* ✅ back to blue */
+  color: white;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+
+  transition: 0.3s;
 }
+
+/* ✅ Hover effect */
+.login-container button:hover {
+  background: #1864ab;
+  transform: translateY(-2px);
+}
+
+
   </style>
 </head>
 
