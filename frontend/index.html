@@ -85,6 +85,19 @@ body {
 </div>
 
 <script>
+
+
+function convertTimeString(timeStr) {
+  const [minutes, seconds] = timeStr.split(":").map(Number);
+
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+
+  return `${hours}h ${remainingMinutes}m`;
+}
+
+
+
 async function login(e) {
   e.preventDefault();
 

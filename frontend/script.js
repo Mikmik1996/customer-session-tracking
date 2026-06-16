@@ -1,6 +1,16 @@
 console.log("✅ SCRIPT LOADED");
 
 /* =======================
+   ✅ TIME FORMAT (NEW)
+======================= */
+function convertMinutesToHours(mins) {
+  const hours = Math.floor(mins / 60);
+  const remainingMinutes = mins % 60;
+
+  return `${hours}h ${remainingMinutes}m`;
+}
+
+/* =======================
    ✅ SIDEBAR
 ======================= */
 function showSection(id) {
@@ -29,7 +39,7 @@ function logout() {
 }
 
 /* =======================
-   ✅ ADD SESSION (FIXED)
+   ✅ ADD SESSION
 ======================= */
 async function addSession() {
   const name = document.getElementById("name").value;
@@ -55,7 +65,6 @@ async function addSession() {
     if (data.success) {
       console.log("✅ Session saved");
 
-      // ✅ VERY IMPORTANT (MAIN FIX)
       loadSessions();
 
       const msg = document.getElementById("msg");
@@ -147,7 +156,7 @@ async function loadSessions() {
           <td>${timeIn}</td>
           <td>${timeOut}</td>
           <td class="${color}">
-            ${duration >= 999 ? "Unlimited" : `${mins}:${secs.toString().padStart(2, '0')}`}
+            ${duration >= 999 ? "Unlimited" : convertMinutesToHours(mins)}
           </td>
           <td>
             <button class="remove" onclick="removeSession(${s.id})">Remove</button>
