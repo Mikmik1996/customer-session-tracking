@@ -1,7 +1,7 @@
 console.log("✅ SCRIPT LOADED");
 
 /* ==========================================
-   ⏰ TIME FORMAT (HH:MM:SS)
+    ⏰ TIME FORMAT (HH:MM:SS)
 ========================================== */
 function formatRemainingTime(totalSeconds) {
   if (totalSeconds <= 0) return "00:00:00";
@@ -18,7 +18,7 @@ function formatRemainingTime(totalSeconds) {
 }
 
 /* ==========================================
-   📁 SIDEBAR VIEW SWITCHER
+    📁 SIDEBAR VIEW SWITCHER
 ========================================== */
 function showSection(id) {
   // Hide all sections dynamically
@@ -28,7 +28,13 @@ function showSection(id) {
 
   // Activate chosen target section panel template
   const el = document.getElementById(id);
-  if (el) el.classList.add("active");
+  if (el) {
+    el.classList.add("active");
+  } else {
+    // Fallback if an explicit hash element isn't found
+    const fallback = document.getElementById("registration");
+    if (fallback) fallback.classList.add("active");
+  }
 
   // Automatically refresh analytical canvas charts if entering Reports page
   if (id === "reports") {
@@ -44,18 +50,20 @@ function setActive(btn) {
 }
 
 function logout() {
+  localStorage.removeItem("isLoggedIn");
   window.location.href = "/";
 }
 
 /* ==========================================
-   ➕ ADD SESSION (INSTANT UI REFRESH)
+    ➕ ADD SESSION (INSTANT UI REFRESH)
 ========================================== */
 async function addSession() {
-  const name = document.getElementById("name").value;
-  const contact = document.getElementById("contact").value;
-  const package_id = document.getElementById("package").value;
+  const nameInput = document.getElementById("name");
+  const contactInput = document.getElementById("contact");
+  const packageInput = document.getElementById("package");
+  const msg = document.getElementById("msg");
 
-  if (!name || !package_id) {
+  if (!nameInput || !packageInput || nameInput.value.trim() === "" || packageInput.value === "") {
     alert("⚠️ Please fill out the customer name and select a package.");
     return;
   }
@@ -65,9 +73,9 @@ async function addSession() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        client_name: name,
-        client_contact: contact,
-        package_id: parseInt(package_id),
+        client_name: nameInput.value.trim(),
+        client_contact: contactInput ? contactInput.value.trim() : "",
+        package_id: parseInt(packageInput.value, 10),
         staff_id: 1
       })
     });
@@ -78,30 +86,30 @@ async function addSession() {
       console.log("✅ Session saved successfully.");
 
       // Clear layout fields instantly
-      document.getElementById("name").value = "";
-      document.getElementById("contact").value = "";
-      document.getElementById("package").value = "";
+      nameInput.value = "";
+      if (contactInput) contactInput.value = "";
+      packageInput.value = "";
 
       // Force instant data engine synchronizer reload execution pass
       await loadSessions();
 
       // Trigger temporary floating confirmation notification label element
-      const msg = document.getElementById("msg");
       if (msg) {
         msg.innerText = "✅ Session added!";
         msg.style.opacity = "1";
         setTimeout(() => { msg.style.opacity = "0"; }, 2000);
       }
     } else {
-      alert("❌ Failed to add session");
+      alert("❌ Failed to add session: " + (data.error || "Database rejected request"));
     }
   } catch (err) {
     console.error("❌ Add session execution error:", err);
+    alert("Server execution failure while adding session.");
   }
 }
 
 /* ==========================================
-   📊 DASHBOARD DATA RENDERING & TIMERS
+    DASHBOARD DATA RENDERING & TIMERS
 ========================================== */
 async function loadSessions() {
   try {
@@ -187,17 +195,23 @@ async function loadSessions() {
 }
 
 /* ==========================================
-   🛑 TERMINATE TRACKING SESSIONS
+    🛑 TERMINATE TRACKING SESSIONS
 ========================================== */
 async function removeSession(id) {
   if (confirm("Are you sure you want to end this customer tracking session?")) {
-    await fetch(`/api/sessions/${id}/end`, { method: "POST" });
-    loadSessions();
+    try {
+      const res = await fetch(`/api/sessions/${id}/end`, { method: "POST" });
+      if (res.ok) {
+        loadSessions();
+      }
+    } catch (err) {
+      console.error("❌ Error ending session:", err);
+    }
   }
 }
 
 /* ==========================================
-   📈 ANALYTICS REVENUE METRIC CHART ENGINE
+    ANALYTICS REVENUE METRIC CHART ENGINE
 ========================================== */
 let chart; 
 
@@ -205,8 +219,11 @@ async function loadChart() {
   const canvas = document.getElementById("chart");
   if (!canvas) return;
 
-  const startVal = document.getElementById("startDate").value;
-  const endVal = document.getElementById("endDate").value;
+  const startDateEl = document.getElementById("startDate");
+  const endDateEl = document.getElementById("endDate");
+
+  const startVal = startDateEl ? startDateEl.value : "";
+  const endVal = endDateEl ? endDateEl.value : "";
 
   let url = "/api/chart-data";
   if (startVal && endVal) {
@@ -254,11 +271,14 @@ async function loadChart() {
 }
 
 /* ==========================================
-   📥 EXPORT LOGS ENGINE TO SPREADSHEETS
+    EXPORT LOGS ENGINE TO SPREADSHEETS
 ========================================== */
 function downloadCSV() {
-  const startVal = document.getElementById("startDate").value;
-  const endVal = document.getElementById("endDate").value;
+  const startDateEl = document.getElementById("startDate");
+  const endDateEl = document.getElementById("endDate");
+
+  const startVal = startDateEl ? startDateEl.value : "";
+  const endVal = endDateEl ? endDateEl.value : "";
 
   let url = "/api/export";
   if (startVal && endVal) {
@@ -268,11 +288,8 @@ function downloadCSV() {
 }
 
 /* ==========================================
-   🚦 ROUTER BOOTSTRAPPING ENGINE ON LOAD
+    🚦 ROUTER BOOTSTRAPPING ENGINE ON LOAD
 ========================================== */
-// Background real-time table sync loop ticker (every 2 seconds)
-setInterval(loadSessions, 2000);
-
 function initializeDashboardRouting() {
   console.log("🚦 Initializing application view routing router systems...");
   
@@ -280,9 +297,9 @@ function initializeDashboardRouting() {
   loadSessions();
 
   // Read current address window location reference hash tag parsing routing elements
-  const currentHash = window.location.hash; // e.g., "#dashboard", "#reports"
+  const currentHash = window.location.hash; 
   
-  if (currentHash) {
+  if (currentHash && currentHash !== "#") {
     const sectionTargetId = currentHash.replace("#", "");
     
     // Unhide the target UI view canvas block pane
@@ -297,19 +314,16 @@ function initializeDashboardRouting() {
   } else {
     // Normal structural default system fallback placement maps
     showSection("registration");
+    const defaultButton = document.querySelector('.sidebar .menu button[onclick*="registration"]');
+    if (defaultButton) setActive(defaultButton);
   }
 }
 
-// ✅ DOM WRAPPER GUARD: Holds execution securely until HTML nodes are rendered completely!
+// ✅ FIXED: Single consolidated layout initializer to prevent racing script bugs
 document.addEventListener("DOMContentLoaded", () => {
   console.log("DOM fully loaded and parsed. Safe to boot interface elements.");
   initializeDashboardRouting();
-});
-
-// ✅ Run this immediately when the dashboard template page mounts into view
-document.addEventListener("DOMContentLoaded", () => {
-  // Check if your helper layout management system exists, then default to registration view
-  if (typeof showSection === "function") {
-    showSection("registration");
-  }
+  
+  // Background real-time table sync loop ticker (every 2 seconds)
+  setInterval(loadSessions, 2000);
 });
