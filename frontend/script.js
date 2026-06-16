@@ -253,21 +253,21 @@ async function loadChart() {
     const values = Object.values(grouped);
 
     // ✅ GENERATE LEGEND (right side)
-    const legendList = document.getElementById("legendList");
+const legendList = document.getElementById("legendList");
 
-    if (legendList) {
-      let legendHTML = "";
+if (legendList) {
+  let legendHTML = "";
 
-      labels.forEach((label, index) => {
-        legendHTML += `
-          <li style="margin-bottom:8px; font-size:14px;">
-            <strong>${label}</strong> - ${values[index]} pax
-          </li>
-        `;
-      });
+  labels.forEach((label, index) => {
+    legendHTML += `
+      <li style="margin-bottom:8px; font-size:14px;">
+        <strong>${label}</strong> - ${values[index]} pax
+      </li>
+    `;
+  });
 
-      legendList.innerHTML = legendHTML;
-    }
+  legendList.innerHTML = legendHTML;
+}
 
     // ✅ Draw Chart
     const ctx = canvas.getContext("2d");
