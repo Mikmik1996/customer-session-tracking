@@ -14,16 +14,23 @@ app.use(express.static(path.join(__dirname, "../frontend")));
     🎯 DATABASE CONFIGURATION (RAILWAY POOL)
 ========================================== */
 const getDatabaseConfig = () => {
-  if (process.env.MYSQL_URL) return { uri: process.env.MYSQL_URL };
-  if (process.env.DATABASE_URL) return { uri: process.env.DATABASE_URL };
+  // 1. Prioritize unified dynamic platform URL environment variables
+  const unifiedUrl = process.env.MYSQL_URL || process.env.DATABASE_URL || process.env.MYSQLURL;
+  if (unifiedUrl) {
+    console.log("🔗 Database Engine Configuration: Initializing via unified URI connection string.");
+    return { uri: unifiedUrl };
+  }
 
-  return {
-    host: process.env.MYSQLHOST || "localhost",
-    user: process.env.MYSQLUSER || "root",
-    password: process.env.MYSQLPASSWORD || "",
-    database: process.env.MYSQLDATABASE || "wiijum_db",
-    port: process.env.MYSQLPORT ? parseInt(process.env.MYSQLPORT) : 3306,
-  };
+  // 2. Comprehensive fallback parameters supporting all structural database variable names
+  const host = process.env.MYSQLHOST || process.env.MYSQL_HOST || "localhost";
+  const user = process.env.MYSQLUSER || process.env.MYSQL_USER || "root";
+  const password = process.env.MYSQLPASSWORD || process.env.MYSQL_PASSWORD || "";
+  const database = process.env.MYSQLDATABASE || process.env.MYSQL_DB || process.env.MYSQL_DATABASE || "wiijum_db";
+  const port = parseInt(process.env.MYSQLPORT || process.env.MYSQL_PORT || "3306", 10);
+
+  console.log(`🔗 Database Engine Configuration: Using parameters (${host}:${port}, DB: ${database}, User: ${user})`);
+
+  return { host, user, password, database, port };
 };
 
 const pool = mysql.createPool({
