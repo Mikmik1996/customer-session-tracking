@@ -16,129 +16,161 @@
       align-items: center;
 
       background: linear-gradient(rgba(21,170,191,0.6), rgba(28,126,214,0.75)),
-                  url('https://images.unsplash.com/photo-1559564121-657e33e9d40b?q=80&w=1200&auto=format&fit=crop')
-                  no-repeat center center;
+      url('https://images.unsplash.com/photo-1559564121-657e33e9d40b?q=80&w=1200&auto=format&fit=crop')
+      no-repeat center center;
       background-size: cover;
     }
 
+    /* ✅ LOGIN CARD */
     .login-container {
-  background: rgba(255, 255, 255, 0.95);
-  padding: 40px;
-  border-radius: 20px;
-  width: 420px; /* ✅ slightly wider */
+      background: rgba(255, 255, 255, 0.95);
+      padding: 40px;
+      border-radius: 20px;
+      width: 420px;
 
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
 
-  box-shadow: 0 20px 40px rgba(0,0,0,0.3);
-}
+      box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+    }
 
-/* ✅ Ensure form centers everything */
-.login-container form {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 100%;
-}
+    .login-container h2 {
+      margin: 0;
+      font-size: 26px;
+    }
 
-/* ✅ SAME WIDTH for ALL elements */
-.login-container input,
-.password-wrapper {
-  width: 90%;
-}
+    .subtitle {
+      margin-bottom: 25px;
+      font-size: 13px;
+      letter-spacing: 2px;
+      color: #555;
+    }
 
-/* ✅ Password wrapper fix (IMPORTANT) */
-.password-wrapper {
-  position: relative;
-}
+    /* ✅ FORM CENTER */
+    form {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
 
-/* ✅ Inputs */
-.login-container input {
-  padding: 14px;
-  margin: 12px 0;
-  border-radius: 10px;
-  border: 1px solid #ccc;
-  font-size: 15px;
-  outline: none;
-  transition: 0.25s;
-  box-sizing: border-box; /* ✅ FIX alignment */
-}
+    /* ✅ USERNAME INPUT */
+    input[type="text"] {
+      width: 90%;
+      padding: 14px;
+      margin: 10px 0;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+      font-size: 15px;
+      outline: none;
+      box-sizing: border-box;
+    }
 
-/* ✅ Focus glow */
-.login-container input:focus {
-  border-color: #1c7ed6;
-  box-shadow: 0 0 8px rgba(28,126,214,0.3);
-}
+    /* ✅ PASSWORD WRAPPER (FIXED) */
+    .password-wrapper {
+      width: 90%;
+      position: relative;
+      margin: 10px 0;
+    }
 
-/* ✅ Toggle "Show" */
-.toggle-password {
-  position: absolute;
-  right: 15px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 14px;
-  color: #666;
-  cursor: pointer;
-}
+    .password-wrapper input {
+      width: 100%;
+      padding: 14px;
+      padding-right: 60px; /* ✅ space for "Show" */
+      border-radius: 10px;
+      border: 1px solid #ccc;
+      font-size: 15px;
+      outline: none;
+      box-sizing: border-box;
+    }
 
-/* ✅ Login button (FIXED) */
-.login-container button {
-  width: 70%; /* ✅ smaller button */
-  padding: 14px;
-  margin-top: 18px;
-  border-radius: 10px;
-  border: none;
+    /* ✅ SHOW BUTTON INSIDE INPUT */
+    .toggle-password {
+      position: absolute;
+      right: 15px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 14px;
+      color: #555;
+      cursor: pointer;
+    }
 
-  background: #1c7ed6; /* ✅ back to blue */
-  color: white;
-  font-size: 16px;
-  font-weight: bold;
-  cursor: pointer;
+    /* ✅ INPUT FOCUS */
+    input:focus {
+      border-color: #1c7ed6;
+      box-shadow: 0 0 8px rgba(28,126,214,0.3);
+    }
 
-  transition: 0.3s;
-}
+    /* ✅ LOGIN BUTTON */
+    button {
+      width: 70%;
+      padding: 14px;
+      margin-top: 20px;
+      border-radius: 10px;
+      border: none;
+      background: #1c7ed6;
+      color: white;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.3s;
+    }
 
-/* ✅ Hover effect */
-.login-container button:hover {
-  background: #1864ab;
-  transform: translateY(-2px);
-}
+    button:hover {
+      background: #1864ab;
+      transform: translateY(-2px);
+    }
 
+    button:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+    }
 
+    /* ✅ FADE */
+    .fade-out {
+      opacity: 0;
+      transition: 0.5s;
+    }
   </style>
 </head>
 
 <body>
 
 <div class="login-container">
+
   <h2>Wiijump Philippines</h2>
   <p class="subtitle">ADMIN LOGIN</p>
 
   <form onsubmit="login(event)">
+    
+    <!-- ✅ USERNAME -->
     <input type="text" id="username" placeholder="Username" required>
 
-    <!-- ✅ Password with toggle -->
+    <!-- ✅ PASSWORD (FIXED ALIGNMENT) -->
     <div class="password-wrapper">
       <input type="password" id="password" placeholder="Password" required>
-      <span class="toggle-password" id="toggleText" onclick="togglePassword()">Show</span>
+      <span class="toggle-password" onclick="togglePassword()">Show</span>
     </div>
 
+    <!-- ✅ BUTTON -->
     <button type="submit" id="loginBtn">Login</button>
+
   </form>
+
 </div>
 
 <script>
 function togglePassword() {
-  const password = document.getElementById("password");
-  const toggleText = document.getElementById("toggleText");
+  const input = document.getElementById("password");
+  const text = document.querySelector(".toggle-password");
 
-  if (password.type === "password") {
-    password.type = "text";
-    toggleText.innerText = "Hide";
+  if (input.type === "password") {
+    input.type = "text";
+    text.innerText = "Hide";
   } else {
-    password.type = "password";
-    toggleText.innerText = "Show";
+    input.type = "password";
+    text.innerText = "Show";
   }
 }
 
@@ -155,7 +187,9 @@ async function login(e) {
   try {
     const res = await fetch("/api/login", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json"
+      },
       body: JSON.stringify({ username, password })
     });
 
@@ -176,8 +210,8 @@ async function login(e) {
       btn.disabled = false;
     }
 
-  } catch (error) {
-    console.error(error);
+  } catch (err) {
+    console.error(err);
     alert("Server error");
     btn.innerText = "Login";
     btn.disabled = false;
