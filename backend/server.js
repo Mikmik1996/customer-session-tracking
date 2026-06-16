@@ -71,7 +71,7 @@ app.post("/api/sessions", async (req, res) => {
 });
 
 /* ===========================
-   ✅ ACTIVE SESSIONS (TYPO COMPLETELY REMOVED HERE ON LINE 78)
+   ✅ ACTIVE SESSIONS
 =========================== */
 app.get("/api/sessions/active", async (req, res) => {
   try {
@@ -110,15 +110,23 @@ app.post("/api/sessions/:id/end", async (req, res) => {
 });
 
 /* ===========================
-   ✅ EXPORT CSV (CLEAN & 6-COLUMNS IN ASIA/MANILA TIME)
+   ✅ EXPORT CSV (WITH DATE FILTERING SUPPORT)
 =========================== */
 app.get("/api/export", async (req, res) => {
   try {
-    const [rows] = await pool.query(`
-      SELECT client_name, client_contact, package_id, start_time, end_time
-      FROM sessions
-      ORDER BY start_time DESC
-    `);
+    const { start, end } = req.query;
+    
+    // Build explicit filtering query conditions for Manila Timezone boundary blocks
+    let sql = `SELECT client_name, client_contact, package_id, start_time, end_time FROM sessions`;
+    let params = [];
+
+    if (start && end) {
+      sql += ` WHERE CONVERT_TZ(start_time, '+00:00', '+08:00') BETWEEN ? AND ?`;
+      params.push(`${start} 00:00:00`, `${end} 23:59:59`);
+    }
+    
+    sql += ` ORDER BY start_time DESC`;
+    const [rows] = await pool.query(sql, params);
 
     const cleanedRows = rows.map(row => {
       const startDate = new Date(row.start_time);
@@ -129,9 +137,8 @@ app.get("/api/export", async (req, res) => {
       else if (row.package_id == 2) { packageName = "1 hour"; durationMins = 60; }
       else if (row.package_id == 3) { packageName = "1.5 hours"; durationMins = 90; }
       else if (row.package_id == 4) { packageName = "2 hours"; durationMins = 120; }
-      else if (row.package_id == 5) { packageName = "Unlimited"; durationMins = 999; }
+      else { packageName = "Unlimited"; durationMins = 999; }
 
-      // Force formatting using Manila timezone
       const dateString = startDate.toLocaleDateString("en-PH", {
         timeZone: "Asia/Manila",
         year: "numeric",
@@ -196,7 +203,6 @@ app.get("/api/export", async (req, res) => {
       csvContent += line + "\n";
     });
 
-    // Browser Cache Breakers
     res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
     res.setHeader("Pragma", "no-cache");
     res.setHeader("Expires", "0");
@@ -212,11 +218,13 @@ app.get("/api/export", async (req, res) => {
 });
 
 /* ===========================
-   ✅ CHART DATA
+   ✅ CHART DATA (WITH DATE FILTERING & DUPLICATE UNLIMITED FIX)
 =========================== */
 app.get("/api/chart-data", async (req, res) => {
   try {
-    const [rows] = await pool.query(`
+    const { start, end } = req.query;
+
+    let sql = `
       SELECT 
         CASE 
           WHEN package_id = 1 THEN '30 mins'
@@ -227,9 +235,28 @@ app.get("/api/chart-data", async (req, res) => {
         END AS package_name,
         COUNT(*) AS count
       FROM sessions
-      GROUP BY package_id
-    `);
+    `;
+    
+    let params = [];
+    if (start && end) {
+      // Filter cleanly converting UTC system timestamps to localized Manila context strings
+      sql += ` WHERE CONVERT_TZ(start_time, '+00:00', '+08:00') BETWEEN ? AND ?`;
+      params.push(`${start} 00:00:00`, `${end} 23:59:59`);
+    }
 
+    // Explicitly group cleanly by the string outcome name to eliminate duplicate Unlimited bar fragmentation!
+    sql += `
+      GROUP BY 
+        CASE 
+          WHEN package_id = 1 THEN '30 mins'
+          WHEN package_id = 2 THEN '1 hour'
+          WHEN package_id = 3 THEN '1.5 hours'
+          WHEN package_id = 4 THEN '2 hours'
+          ELSE 'Unlimited'
+        END
+    `;
+
+    const [rows] = await pool.query(sql, params);
     res.json(rows);
 
   } catch (err) {
@@ -251,5 +278,5 @@ app.get("*", (req, res) => {
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+  console.log("🚀 Server running on port " + PORT);
 });
