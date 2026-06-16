@@ -1,44 +1,48 @@
-const express = require("express");
-const mysql = require("mysql2/promise");
-const path = require("path");
-const cors = require("cors");
+const express = require('express');
+const mysql = require('mysql2/promise');
+const cors = require('cors');
+const path = require('path');
 
 const app = express();
 app.use(express.json());
 app.use(cors());
 
-// Serve all frontend static files automatically
-app.use(express.static(path.join(__dirname, "../frontend")));
+// Serve static frontend assets
+app.use(express.static(path.join(__dirname, '../frontend')));
 
 /* ==========================================
     🎯 DATABASE CONFIGURATION (RAILWAY POOL)
 ========================================== */
-// Dynamic connection setup: Fallback gracefully between single connection string and granular blocks
-const connectionConfig = process.env.MYSQL_URL || process.env.DATABASE_URL ? {
-  uri: process.env.MYSQL_URL || process.env.DATABASE_URL
-} : {
-  host: process.env.MYSQLHOST || "localhost",
-  user: process.env.MYSQLUSER || "root",
-  password: process.env.MYSQLPASSWORD || "",
-  database: process.env.MYSQLDATABASE || "wiijum_db",
-  port: process.env.MYSQLPORT ? parseInt(process.env.MYSQLPORT) : 3306,
+const getDatabaseConfig = () => {
+  if (process.env.MYSQL_URL) return { uri: process.env.MYSQL_URL };
+  if (process.env.DATABASE_URL) return { uri: process.env.DATABASE_URL };
+
+  return {
+    host: process.env.MYSQLHOST || "localhost",
+    user: process.env.MYSQLUSER || "root",
+    password: process.env.MYSQLPASSWORD || "",
+    database: process.env.MYSQLDATABASE || "wiijum_db",
+    port: parseInt(process.env.MYSQLPORT || "3306", 10)
+  };
 };
 
 const pool = mysql.createPool({
-  ...connectionConfig,
+  ...getDatabaseConfig(),
   waitForConnections: true,
   connectionLimit: 10,
-  queueLimit: 0,
-  connectTimeout: 10000 // Prevent silent infinite hangs on cold starts
+  queueLimit: 0
 });
 
-// ✅ FIXED & ENHANCED: Self-healing startup table generator script
-(async () => {
+/* ==========================================
+    🛠️ AUTO-INITIALIZE TABLES (BLOCKING BOOT)
+========================================== */
+async function initializeDatabase() {
+  let connection;
   try {
-    const connection = await pool.getConnection();
+    connection = await pool.getConnection();
     console.log("🚀 DATABASE CONNECTED SUCCESSFULLY TO RAILWAY MYSQL POOL!");
-    
-    // Auto-generate the tracking schema structure if it doesn't exist yet
+
+    // 1. Build the active tracking sessions table structure if missing
     await connection.query(`
       CREATE TABLE IF NOT EXISTS customer_sessions (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -50,67 +54,64 @@ const pool = mysql.createPool({
         end_time DATETIME NULL
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     `);
-    console.log("📦 MySQL DB Schema Verified: customer_sessions table is fully ready.");
-    
-    connection.release();
+    console.log("📦 System Schema: customer_sessions table verified.");
+
+    // 2. Build the staff login credential verification table structure if missing
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS staff (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        username VARCHAR(100) NOT NULL UNIQUE,
+        password VARCHAR(255) NOT NULL,
+        name VARCHAR(100) NULL
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `);
+    console.log("📦 System Schema: staff authentication table verified.");
+
+    return true;
   } catch (err) {
-    console.error("⚠️ Database connection error. Operating in local fallback mode:", err.message);
+    console.error("⚠️ Critical database structure setup failure:", err.message);
+    return false;
+  } finally {
+    if (connection) connection.release();
   }
-})();
+}
 
 /* ==========================================
-    🔑 USER ACCESS & FAILSAFE AUTHENTICATION
+    🌐 API ENDPOINTS / ROUTING
 ========================================== */
-app.post("/api/login", async (req, res) => {
+
+// Authenticators
+app.post('/api/login', async (req, res) => {
   const { username, password } = req.body;
   console.log(`🔑 Login validation checkpoint for: ${username}`);
-
-  // Hardcoded Master Admin Override Bypass
-  if (username === "admin" && password === "jump123") {
+  
+  if (username === 'admin' && password === 'jump123') {
     console.log("🎯 Access granted via hardcoded administrator bypass.");
-    return res.json({ success: true });
+    return res.json({ success: true, token: "mock-jwt-token" });
   }
-
-  try {
-    const [rows] = await pool.query(
-      "SELECT * FROM staff WHERE username = ? AND password = ?", 
-      [username, password]
-    );
-
-    if (rows.length > 0) {
-      res.json({ success: true });
-    } else {
-      res.json({ success: false });
-    }
-  } catch (err) {
-    console.error("⚠️ Fallback validation active. Rejecting query request.");
-    res.json({ success: false });
-  }
+  res.status(401).json({ success: false, error: "Invalid credentials" });
 });
 
-/* ==========================================
-    📊 ACTIVE REAL-TIME DASHBOARD SESSIONS
-========================================== */
-app.get("/api/sessions/active", async (req, res) => {
+// Fetch Active Tracking Sessions
+app.get('/api/sessions/active', async (req, res) => {
   try {
+    // This query will now never run until the table structure is guaranteed to exist
     const [rows] = await pool.query(
-      "SELECT * FROM customer_sessions WHERE end_time IS NULL ORDER BY start_time DESC"
+      `SELECT * FROM customer_sessions WHERE end_time IS NULL ORDER BY start_time DESC`
     );
     res.json(rows);
   } catch (err) {
     console.error("❌ Error fetching active panel layout row items:", err.message);
-    res.status(500).json({ error: "Failed to load active tracking rows" });
+    res.status(500).json({ error: "Database query execution failure" });
   }
 });
 
-/* ==========================================
-    ➕ CREATE NEW SESSIONS
-========================================== */
-app.post("/api/sessions", async (req, res) => {
+// Add New Session Transaction
+app.post('/api/sessions', async (req, res) => {
   const { client_name, client_contact, package_id, staff_id } = req.body;
   try {
     await pool.query(
-      "INSERT INTO customer_sessions (client_name, client_contact, package_id, staff_id, start_time) VALUES (?, ?, ?, ?, NOW())",
+      `INSERT INTO customer_sessions (client_name, client_contact, package_id, staff_id) VALUES (?, ?, ?, ?)`,
       [client_name, client_contact, package_id, staff_id || 1]
     );
     res.json({ success: true });
@@ -120,129 +121,41 @@ app.post("/api/sessions", async (req, res) => {
   }
 });
 
-/* ==========================================
-    🛑 TERMINATE / REMOVE TRACKING SESSIONS
-========================================== */
-app.post("/api/sessions/:id/end", async (req, res) => {
+// End an Existing Session
+app.post('/api/sessions/:id/end', async (req, res) => {
   const { id } = req.params;
   try {
     await pool.query(
-      "UPDATE customer_sessions SET end_time = NOW() WHERE id = ?",
+      `UPDATE customer_sessions SET end_time = CURRENT_TIMESTAMP WHERE id = ?`,
       [id]
     );
     res.json({ success: true });
   } catch (err) {
-    console.error("❌ Error concluding customer timeline context:", err.message);
+    console.error("❌ Error ending session transaction:", err.message);
     res.status(500).json({ success: false, error: err.message });
   }
 });
 
-/* ==========================================
-    📈 ANALYTICS CHART METRICS (FILTER READY)
-========================================== */
-app.get("/api/chart-data", async (req, res) => {
-  const { start, end } = req.query;
-  
-  let sql = `
-    SELECT 
-      CASE 
-        WHEN package_id = 1 THEN '30 mins'
-        WHEN package_id = 2 THEN '1 hour'
-        WHEN package_id = 3 THEN '1.5 hours'
-        WHEN package_id = 4 THEN '2 hours'
-        WHEN package_id = 5 THEN 'Unlimited'
-        ELSE 'Unknown'
-      END AS package_name,
-      COUNT(*) AS count 
-    FROM customer_sessions
-  `;
-  
-  const params = [];
-  
-  if (start && end) {
-    sql += " WHERE DATE(CONVERT_TZ(start_time, '+00:00', '+08:00')) BETWEEN ? AND ? ";
-    params.push(start, end);
-  }
-  
-  sql += " GROUP BY package_id ORDER BY package_id ASC";
-
-  try {
-    const [rows] = await pool.query(sql, params);
-    res.json(rows);
-  } catch (err) {
-    console.error("❌ Analytics aggregator compilation failed:", err.message);
-    res.status(500).json([]); 
-  }
+// Catch-all route to serve the login index page
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/index.html'));
 });
 
 /* ==========================================
-    📥 EXPORT LOGS ROUTE (FILTERS COMPATIBLE)
+    🚀 APPLICATION ENGINE SPIN UP
 ========================================== */
-app.get("/api/export", async (req, res) => {
-  const { start, end } = req.query;
-
-  let sql = `
-    SELECT 
-      client_name, 
-      client_contact,
-      CASE 
-        WHEN package_id = 1 THEN '30 mins'
-        WHEN package_id = 2 THEN '1 hour'
-        WHEN package_id = 3 THEN '1.5 hours'
-        WHEN package_id = 4 THEN '2 hours'
-        WHEN package_id = 5 THEN 'Unlimited'
-        ELSE 'Other'
-      END AS package_name,
-      CONVERT_TZ(start_time, '+00:00', '+08:00') AS local_start,
-      CONVERT_TZ(end_time, '+00:00', '+08:00') AS local_end
-    FROM customer_sessions
-  `;
-
-  const params = [];
-  if (start && end) {
-    sql += " WHERE DATE(CONVERT_TZ(start_time, '+00:00', '+08:00')) BETWEEN ? AND ? ";
-    params.push(start, end);
-  }
-
-  sql += " ORDER BY start_time DESC";
-
-  try {
-    const [rows] = await pool.query(sql, params);
-
-    res.setHeader("Content-Type", "text/csv");
-    res.setHeader("Content-Disposition", `attachment; filename=Wiijum_Report_${start || "All"}_to_${end || "All"}.csv`);
-
-    let csvContent = "Date,Customer Name,Contact Number,Package,Start Time,End Time\n";
-
-    rows.forEach(row => {
-      const startDateObj = new Date(row.local_start);
-      const dateString = !isNaN(startDateObj) ? startDateObj.toLocaleDateString("en-PH") : "-";
-      const startTimeString = !isNaN(startDateObj) ? startDateObj.toLocaleTimeString("en-PH", { hour: '2-digit', minute: '2-digit' }) : "-";
-      
-      let endTimeString = "-";
-      if (row.local_end) {
-        const endDateObj = new Date(row.local_end);
-        if (!isNaN(endDateObj)) {
-          endTimeString = endDateObj.toLocaleTimeString("en-PH", { hour: '2-digit', minute: '2-digit' });
-        }
-      }
-
-      csvContent += `"${dateString}","${row.client_name}","${row.client_contact}","${row.package_name}","${startTimeString}","${endTimeString}"\n`;
-    });
-
-    res.send(csvContent);
-  } catch (err) {
-    console.error("❌ CSV engine compiler error:", err.message);
-    res.status(500).send("Error exporting business metric reports csv");
-  }
-});
-
-// Fallback Wildcard route for UI asset redirection mapping
-app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "../frontend/index.html"));
-});
-
 const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => {
-  console.log(`🚀 Server fully operational and running live on port ${PORT}`);
-});
+
+// Force verification sequence BEFORE waking up the web app service listener
+(async () => {
+  const dbReady = await initializeDatabase();
+  
+  if (dbReady) {
+    app.listen(PORT, () => {
+      console.log(`🚀 Server fully operational and running live on port ${PORT}`);
+    });
+  } else {
+    console.error("🛑 Server boot halted: Unable to verify essential MySQL database schemas.");
+    process.exit(1);
+  }
+})();
