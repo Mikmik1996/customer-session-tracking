@@ -11,49 +11,65 @@ app.use(cors());
 app.use(express.static(path.join(__dirname, "../frontend")));
 
 /* ==========================================
-    🎯 DATABASE CONFIGURATION (RAILWAY POOL)
+    🎯 DATABASE CONFIGURATION PARSER
 ========================================== */
 const getDatabaseConfig = () => {
-  // 1. Prioritize unified dynamic platform URL environment variables
   const unifiedUrl = process.env.MYSQL_URL || process.env.DATABASE_URL || process.env.MYSQLURL;
   if (unifiedUrl) {
-    console.log("🔗 Database Engine Configuration: Initializing via unified URI connection string.");
     return { uri: unifiedUrl };
   }
 
-  // 2. Comprehensive fallback parameters supporting all structural database variable names
-  const host = process.env.MYSQLHOST || process.env.MYSQL_HOST || "localhost";
-  const user = process.env.MYSQLUSER || process.env.MYSQL_USER || "root";
-  const password = process.env.MYSQLPASSWORD || process.env.MYSQL_PASSWORD || "";
-  const database = process.env.MYSQLDATABASE || process.env.MYSQL_DB || process.env.MYSQL_DATABASE || "wiijum_db";
-  const port = parseInt(process.env.MYSQLPORT || process.env.MYSQL_PORT || "3306", 10);
-
-  console.log(`🔗 Database Engine Configuration: Using parameters (${host}:${port}, DB: ${database}, User: ${user})`);
-
-  return { host, user, password, database, port };
+  return {
+    host: process.env.MYSQLHOST || "localhost",
+    user: process.env.MYSQLUSER || "root",
+    password: process.env.MYSQLPASSWORD || "",
+    database: process.env.MYSQLDATABASE || "wiijum_db",
+    port: process.env.MYSQLPORT ? parseInt(process.env.MYSQLPORT) : 3306,
+  };
 };
 
+// Establish a clean base configuration
+const baseConfig = getDatabaseConfig();
+
+// Create our primary application query connection pool instance
 const pool = mysql.createPool({
-  ...getDatabaseConfig(),
+  ...baseConfig,
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
   connectTimeout: 10000
 });
 
-// Track schema readiness state globally
+// Track layout schema deployment readiness state globally
 let tablesReady = false;
 
-// Dynamic Table Generator Function
+// 🛠️ Dynamic Database Creator & Migrator
 async function ensureTablesExist() {
   if (tablesReady) return true;
   
-  let connection;
+  let tempConnection;
   try {
-    connection = await pool.getConnection();
-    
-    // 1. Build the active tracking sessions table structure if missing
-    await connection.query(`
+    // 1. If connecting via single dynamic URI string parameter
+    if (baseConfig.uri) {
+      tempConnection = await pool.getConnection();
+    } else {
+      // 2. Extract configuration pieces to safely assert structural database existence
+      const targetDb = baseConfig.database || "wiijum_db";
+      
+      tempConnection = await mysql.createConnection({
+        host: baseConfig.host,
+        user: baseConfig.user,
+        password: baseConfig.password,
+        port: baseConfig.port
+      });
+
+      // Assert the named database schema namespace exists in production database container
+      await tempConnection.query(`CREATE DATABASE IF NOT EXISTS \`${targetDb}\`;`);
+      await tempConnection.query(`USE \`${targetDb}\`;`);
+    }
+
+    // 3. Build the active tracking sessions table structure if missing
+    await tempConnection.query(`
       CREATE TABLE IF NOT EXISTS customer_sessions (
         id INT AUTO_INCREMENT PRIMARY KEY,
         client_name VARCHAR(255) NOT NULL,
@@ -65,8 +81,8 @@ async function ensureTablesExist() {
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     `);
 
-    // 2. Build the staff login credential verification table structure if missing
-    await connection.query(`
+    // 4. Build the staff login credential verification table structure if missing
+    await tempConnection.query(`
       CREATE TABLE IF NOT EXISTS staff (
         id INT AUTO_INCREMENT PRIMARY KEY,
         username VARCHAR(100) NOT NULL UNIQUE,
@@ -75,18 +91,24 @@ async function ensureTablesExist() {
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     `);
 
-    console.log("🚀 DATABASE CONNECTED & ESSENTIAL TABLES VERIFIED!");
+    console.log("🚀 DATABASE HEALED: Essential schemas and tracking tables validated successfully!");
     tablesReady = true;
     return true;
   } catch (err) {
-    console.error("⚠️ Database tables not ready yet. Retrying on next request... Details:", err.message);
+    console.error("⚠️ Database namespace initialization pending. Retrying... Reason:", err.message);
     return false;
   } finally {
-    if (connection) connection.release();
+    if (tempConnection) {
+      if (typeof tempConnection.release === 'function') {
+        tempConnection.release();
+      } else {
+        await tempConnection.end();
+      }
+    }
   }
 }
 
-// Fire an initial check immediately on boot without crashing if it takes time
+// Trigger initial bootstrapping loop pass immediately on container environment wake up
 ensureTablesExist();
 
 /* ==========================================
@@ -96,14 +118,13 @@ app.post("/api/login", async (req, res) => {
   const { username, password } = req.body;
   console.log(`🔑 Login validation checkpoint for: ${username}`);
 
-  // Hardcoded Master Admin Override Bypass
   if (username === "admin" && password === "jump123") {
     console.log("🎯 Access granted via hardcoded administrator bypass.");
     return res.json({ success: true });
   }
 
   try {
-    await ensureTablesExist(); // Ensure table is generated before query
+    await ensureTablesExist();
     const [rows] = await pool.query(
       "SELECT * FROM staff WHERE username = ? AND password = ?", 
       [username, password]
@@ -127,7 +148,7 @@ app.get("/api/sessions/active", async (req, res) => {
   try {
     const isReady = await ensureTablesExist();
     if (!isReady) {
-      return res.json([]); // Return elegant empty array if tables are still initializing
+      return res.json([]); 
     }
 
     const [rows] = await pool.query(
@@ -177,7 +198,7 @@ app.post("/api/sessions/:id/end", async (req, res) => {
 });
 
 /* ==========================================
-    📈 ANALYTICS CHART METRICS (FILTER READY)
+    📈 ANALYTICS CHART METRICS
 ========================================== */
 app.get("/api/chart-data", async (req, res) => {
   const { start, end } = req.query;
@@ -215,7 +236,7 @@ app.get("/api/chart-data", async (req, res) => {
 });
 
 /* ==========================================
-    📥 EXPORT LOGS ROUTE (FILTERS COMPATIBLE)
+    📥 EXPORT LOGS ROUTE
 ========================================== */
 app.get("/api/export", async (req, res) => {
   const { start, end } = req.query;
