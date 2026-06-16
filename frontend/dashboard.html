@@ -294,20 +294,20 @@
 <body>
 
   <div class="sidebar">
-    <h2>WIIJUMP</h2>
+    <h2>Menu</h2>
 
     <div class="menu">
       <button class="active" onclick="setActive(this); showSection('registration')">
-        👤 Customer Registration
+        Customer Registration
       </button>
       <button onclick="setActive(this); showSection('dashboard')">
-        📊 Active Tracking Dashboard
+        Active Tracking Dashboard
       </button>
       <button onclick="setActive(this); showSection('reports')">
-        📈 Analytics Reports
+        Analytics Reports
       </button>
       <button class="logout-btn" onclick="logout()">
-        🚪 Logout System
+        Logout System
       </button>
     </div>
   </div>
@@ -317,10 +317,10 @@
     <div id="registration" class="section active">
       <div class="flex-center-container">
         <div class="card">
-          <h2>Registration View</h2>
+          <h2>Customer Registration</h2>
 
           <input type="text" id="name" placeholder="Customer Name" required>
-          <input type="text" id="contact" placeholder="Contact Number (Optional)">
+          <input type="text" id="contact" placeholder="Contact Number">
 
           <select id="package" required>
             <option value="" disabled selected>Select Session Package</option>
@@ -331,7 +331,7 @@
             <option value="5">Unlimited Pass Ticket</option>
           </select>
 
-          <button class="start" onclick="addSession()">Start Customer Session</button>
+          <center><button class="start" onclick="addSession()">Start Session</button></center>
 
           <p id="msg"></p>
         </div>
@@ -339,15 +339,15 @@
     </div>
 
     <div id="dashboard" class="section">
-      <h2>Active Tracking Monitor</h2>
+      <h2>Dashboard</h2>
       <table>
         <thead>
           <tr>
             <th>Customer Name</th>
-            <th>Time-In Check</th>
-            <th>Calculated Time-Out</th>
-            <th>Remaining Counter Status</th>
-            <th>Action Link Controls</th>
+            <th>Time-In</th>
+            <th>Time-Out</th>
+            <th>Remaining time</th>
+            <th>Action</th>
           </tr>
         </thead>
         <tbody id="tableBody"></tbody>
@@ -372,7 +372,7 @@
       </div>
 
       <button class="download" onclick="downloadCSV()">
-        📥 Export Metric Audit Logs (.CSV)
+        Export Data
       </button>
     </div>
 
