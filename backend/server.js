@@ -43,33 +43,17 @@ const pool = mysql.createPool({
 // Track layout schema deployment readiness state globally
 let tablesReady = false;
 
-// 🛠️ Dynamic Database Creator & Migrator
+// 🛠️ Dynamic Database Table Migrator
 async function ensureTablesExist() {
   if (tablesReady) return true;
   
-  let tempConnection;
+  let connection;
   try {
-    // 1. If connecting via single dynamic URI string parameter
-    if (baseConfig.uri) {
-      tempConnection = await pool.getConnection();
-    } else {
-      // 2. Extract configuration pieces to safely assert structural database existence
-      const targetDb = baseConfig.database || "wiijum_db";
-      
-      tempConnection = await mysql.createConnection({
-        host: baseConfig.host,
-        user: baseConfig.user,
-        password: baseConfig.password,
-        port: baseConfig.port
-      });
+    // Grab an authenticated client directly out of our pre-configured Railway pool
+    connection = await pool.getConnection();
 
-      // Assert the named database schema namespace exists in production database container
-      await tempConnection.query(`CREATE DATABASE IF NOT EXISTS \`${targetDb}\`;`);
-      await tempConnection.query(`USE \`${targetDb}\`;`);
-    }
-
-    // 3. Build the active tracking sessions table structure if missing
-    await tempConnection.query(`
+    // 1. Build the active tracking sessions table structure if missing
+    await connection.query(`
       CREATE TABLE IF NOT EXISTS customer_sessions (
         id INT AUTO_INCREMENT PRIMARY KEY,
         client_name VARCHAR(255) NOT NULL,
@@ -81,8 +65,8 @@ async function ensureTablesExist() {
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     `);
 
-    // 4. Build the staff login credential verification table structure if missing
-    await tempConnection.query(`
+    // 2. Build the staff login credential verification table structure if missing
+    await connection.query(`
       CREATE TABLE IF NOT EXISTS staff (
         id INT AUTO_INCREMENT PRIMARY KEY,
         username VARCHAR(100) NOT NULL UNIQUE,
@@ -91,20 +75,14 @@ async function ensureTablesExist() {
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     `);
 
-    console.log("🚀 DATABASE HEALED: Essential schemas and tracking tables validated successfully!");
+    console.log("🚀 DATABASE INITIALIZATION COMPLETE: All tracking tables verified successfully!");
     tablesReady = true;
     return true;
   } catch (err) {
-    console.error("⚠️ Database namespace initialization pending. Retrying... Reason:", err.message);
+    console.error("⚠️ Database pool connection pending. Retrying... Reason:", err.message);
     return false;
   } finally {
-    if (tempConnection) {
-      if (typeof tempConnection.release === 'function') {
-        tempConnection.release();
-      } else {
-        await tempConnection.end();
-      }
-    }
+    if (connection) connection.release(); // Securely return client connection back to the main pool
   }
 }
 
