@@ -11,30 +11,21 @@ app.use(cors());
 app.use(express.static(path.join(__dirname, "../frontend")));
 
 /* ==========================================
-    🎯 FORCE-LINKED DATABASE CONNECTION POOL
+    🎯 DIRECT INTERNAL MYSQL CONNECTION STRING
 ========================================== */
-// Look for Railway's unified connection URLs first
-const dbUri = process.env.MYSQL_URL || process.env.MYSQLURL || process.env.DATABASE_URL;
+// Explicitly using your verified live Railway database network path
+const productionDatabaseUrl = "mysql://root:mfEHOcBYWiLNyWmtQgFJfqQjjKVOetrK@mysql1.railway.internal:3306/railway";
 
-let pool;
+// Initialize connection pool with robust connection handling overrides
+const pool = mysql.createPool({
+  uri: productionDatabaseUrl,
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0,
+  connectTimeout: 30000 // 30 seconds connection threshold to accommodate system spin-ups
+});
 
-if (dbUri) {
-  console.log("🔌 Production Database initializing via direct URL String string wrapper...");
-  pool = mysql.createPool(dbUri);
-} else {
-  console.log("⚠️ Direct URL string missing! Attempting manual parameter block mapping...");
-  pool = mysql.createPool({
-    host: process.env.MYSQLHOST || "127.0.0.1",
-    user: process.env.MYSQLUSER || "root",
-    password: process.env.MYSQLPASSWORD || "",
-    database: process.env.MYSQLDATABASE || "railway",
-    port: parseInt(process.env.MYSQLPORT || "3306", 10),
-    waitForConnections: true,
-    connectionLimit: 5,
-    queueLimit: 0,
-    connectTimeout: 20000
-  });
-}
+console.log("🔌 Hardcoded private network database URL successfully loaded into driver engine.");
 
 // Track layout schema deployment readiness state globally
 let tablesReady = false;
@@ -75,7 +66,7 @@ async function ensureTablesExist() {
     tablesReady = true;
     return true;
   } catch (err) {
-    console.error("⚠️ Database pool connection pending. Retrying... Reason:", err.message);
+    console.error("⚠️ Database initialization pending. Retrying... Reason:", err.message);
     return false;
   } finally {
     if (connection) connection.release(); // Securely return client connection back to the main pool
