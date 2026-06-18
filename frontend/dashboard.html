@@ -42,7 +42,19 @@
   font-weight: 700;
   margin-bottom: 30px;
 }
+.dashboard-filter {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
 
+.dashboard-filter select {
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+}
     /* ==========================================
        📁 SIDEBAR NAVIGATION MENU PANELS
     ========================================== */
@@ -424,21 +436,20 @@
     </div>
 
     <div id="dashboard" class="section">
-      <h2 class="section-title">Dashboard</h2>
+  <h2 class="section-title">Dashboard</h2>
 
-      <table>
-        <thead>
+  <div class="dashboard-filter">
+    <label>Filter:</label>
 
-          <tr>
-            <th>Customer Name</th>
-            <th>Time-In</th>
-            <th>Time-Out</th>
-            <th>Remaining time</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody id="tableBody"></tbody>
-      </table>
+    <select id="sessionFilter" onchange="loadSessions()">
+      <option value="all">All Sessions</option>
+      <option value="active">Active Sessions</option>
+      <option value="unlimited">Unlimited</option>
+      <option value="expired">Expired (00:00:00)</option>
+    </select>
+  </div>
+
+  <table>
 
 <div class="expired-actions">
   <button class="remove-expired"

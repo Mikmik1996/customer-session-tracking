@@ -95,13 +95,12 @@ async function loadSessions() {
   try {
     const res = await fetch("/api/sessions/active");
     const data = await res.json();
-
-    const tableBody = document.getElementById("tableBody");
+ const tableBody = document.getElementById("tableBody");
     if (!tableBody) return;
-
-    let html = "";
-
-    data.forEach(s => {
+let html = "";
+const filter =
+  document.getElementById("sessionFilter")?.value || "all";
+  data.forEach(s => {
       const start = new Date(s.start_time);
       const now = new Date();
 
@@ -112,10 +111,8 @@ async function loadSessions() {
         case 4: duration = 120; break;
         case 5: duration = 999; break;
       }
-
 duration += Number(s.extension_minutes || 0);
-    
-let remain = Math.floor(
+    let remain = Math.floor(
   (duration * 60) - ((now - start) / 1000)
 );
 const expired = remain <= 0;
@@ -123,6 +120,15 @@ const expired = remain <= 0;
 if (remain < 0) {
   remain = 0;
 }
+/* FILTER LOGIC */
+if (filter === "unlimited" && duration < 999)
+  return;
+
+if (filter === "expired" && !expired)
+  return;
+
+if (filter === "active" && (expired || duration >= 999))
+  return;
 
       const timeIn = start.toLocaleTimeString("en-PH");
       let timeOut = "-";
