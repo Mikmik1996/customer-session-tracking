@@ -212,7 +212,8 @@
       border-radius: 12px;
       overflow: hidden;
       box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-      margin-top: 20px;
+      margin-top: 40px;
+      margin-bottom: 50px;
     }
 
     th, td {
@@ -282,11 +283,9 @@
 }
 
 .expired-actions {
-  margin-top: 40px;
   display: flex;
   justify-content: flex-end;
 }
-``
     /* ==========================================
        📈 ANALYTICS COMPONENT FILTER TOOLS
     ========================================== */
@@ -399,8 +398,9 @@
         <tbody id="tableBody"></tbody>
       </table>
 
-<div style="margin-bottom:50px;">
-  <button class="remove-expired" onclick="removeExpiredSessions()">
+<div class="expired-actions">
+  <button class="remove-expired"
+          onclick="removeExpiredSessions()">
     Clear Expired Sessions
   </button>
 </div>
