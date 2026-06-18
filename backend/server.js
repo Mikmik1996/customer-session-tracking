@@ -117,7 +117,7 @@ app.get("/api/export", async (req, res) => {
 
     let query = `
       SELECT
-        DATE(start_time) AS session_date,
+        DATE_FORMAT(start_time, '%Y-%m-%d') AS session_date,
         client_name,
         client_contact,
 
@@ -148,11 +148,15 @@ app.get("/api/export", async (req, res) => {
     const params = [];
 
     if (start && end) {
-      query += ` WHERE DATE(start_time) BETWEEN ? AND ? `;
+      query += `
+        WHERE DATE(start_time) BETWEEN ? AND ?
+      `;
       params.push(start, end);
     }
 
-    query += ` ORDER BY start_time DESC `;
+    query += `
+      ORDER BY start_time DESC
+    `;
 
     const [rows] = await pool.query(query, params);
 
@@ -160,14 +164,7 @@ app.get("/api/export", async (req, res) => {
       "Date,Customer Name,Contact,Session Package,Time In,Time Out\n";
 
     rows.forEach(row => {
-      csv +=
-`${row.session_date},
-${row.client_name},
-${row.client_contact || ""},
-${row.package_name},
-${row.time_in || ""},
-${row.time_out || ""}
-`.replace(/\n/g, ",").replace(/,$/, "") + "\n";
+      csv += `"${row.session_date}","${row.client_name}","${row.client_contact || ""}","${row.package_name}","${row.time_in || ""}","${row.time_out || ""}"\n`;
     });
 
     res.header("Content-Type", "text/csv");
@@ -179,7 +176,7 @@ ${row.time_out || ""}
     res.status(500).json({ error: "Server error" });
   }
 });
-
+``
 /* ===========================
    ✅ CHART DATA WITH FILTER
 =========================== */
