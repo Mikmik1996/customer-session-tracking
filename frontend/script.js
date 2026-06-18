@@ -118,8 +118,11 @@ duration += Number(s.extension_minutes || 0);
 let remain = Math.floor(
   (duration * 60) - ((now - start) / 1000)
 );
+const expired = remain <= 0;
 
-      if (remain < 0) remain = 0;
+if (remain < 0) {
+  remain = 0;
+}
 
       const timeIn = start.toLocaleTimeString("en-PH");
       let timeOut = "-";
@@ -247,10 +250,15 @@ async function extendSession(id, minutes) {
 
     const data = await res.json();   
 if (data.success) {
-loadSessions();
-alert(`✅ Session extended by ${minutes} minutes`);
+
+  alert(`✅ Session extended by ${minutes} minutes`);
+
+  setTimeout(() => {
+    loadSessions();
+  }, 500);
 }
-  } catch (err) {
+
+ } catch (err) {
     console.error(err);
     alert("Failed to extend session.");
   }
