@@ -113,6 +113,7 @@ async function loadSessions() {
         case 5: duration = 999; break;
       }
 
+duration += Number(s.extension_minutes || 0);
     
 let remain = Math.floor(
   (duration * 60) - ((now - start) / 1000)
@@ -145,7 +146,6 @@ let remain = Math.floor(
       ✏️ ${s.client_name}
     </strong>
   </td>
-
   <td>${timeIn}</td>
   <td>${timeOut}</td>
 
@@ -158,11 +158,18 @@ let remain = Math.floor(
   </td>
 
   <td>
-    <button class="remove"
-            onclick="removeSession(${s.id})">
-      Remove
-    </button>
-  </td>
+  <button onclick="extendSession(${s.id}, 30)">
+    +30m
+  </button>
+
+  <button onclick="extendSession(${s.id}, 60)">
+    +60m
+  </button>
+  <button class="remove"
+          onclick="removeSession(${s.id})">
+    Remove
+  </button>
+</td>
 </tr>
 `;
     });
@@ -215,6 +222,36 @@ async function removeExpiredSessions() {
   } catch (err) {
     console.error(err);
     alert("Failed to remove expired sessions.");
+  }
+}
+
+/* ==========================================
+   ➕ EXTEND SESSION
+========================================== */
+async function extendSession(id, minutes) {
+
+  try {
+
+    const res = await fetch(
+      `/api/sessions/${id}/extend`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ minutes })
+      }
+    );
+
+    const data = await res.json();
+
+    if (data.success) {
+      loadSessions();
+    }
+
+  } catch (err) {
+    console.error(err);
+    alert("Failed to extend session.");
   }
 }
 

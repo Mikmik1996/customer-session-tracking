@@ -74,12 +74,16 @@ app.post("/api/sessions", async (req, res) => {
 =========================== */
 app.get("/api/sessions/active", async (req, res) => {
   try {
-    const [rows] = await pool.query(`
-      SELECT id, client_name, start_time, package_id
-      FROM sessions
-      WHERE end_time IS NULL
-    `);
-
+   const [rows] = await pool.query(`
+  SELECT
+    id,
+    client_name,
+    start_time,
+    package_id,
+    extension_minutes
+  FROM sessions
+  WHERE end_time IS NULL
+`);
     res.json(rows);
 
   } catch (err) {
@@ -123,6 +127,33 @@ app.post("/api/sessions/:id/update-name", async (req, res) => {
       WHERE id = ?
       `,
       [client_name, req.params.id]
+    );
+
+    res.json({ success: true });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      success: false
+    });
+  }
+});
+
+/* ===========================
+   ✅ EXTEND SESSION
+=========================== */
+app.post("/api/sessions/:id/extend", async (req, res) => {
+  try {
+    const { minutes } = req.body;
+
+    await pool.query(
+      `
+      UPDATE sessions
+      SET extension_minutes =
+          COALESCE(extension_minutes, 0) + ?
+      WHERE id = ?
+      `,
+      [minutes, req.params.id]
     );
 
     res.json({ success: true });
