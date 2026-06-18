@@ -158,13 +158,15 @@ let remain = Math.floor(
   </td>
 
   <td>
-  <button onclick="extendSession(${s.id}, 30)">
-    +30m
-  </button>
+  <button class="extend"
+        onclick="extendSession(${s.id}, 30)">
+  +30m
+</button>
 
-  <button onclick="extendSession(${s.id}, 60)">
-    +60m
-  </button>
+<button class="extend"
+        onclick="extendSession(${s.id}, 60)">
+  +60m
+</button>
   <button class="remove"
           onclick="removeSession(${s.id})">
     Remove
