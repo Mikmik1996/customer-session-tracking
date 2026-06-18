@@ -109,6 +109,33 @@ app.post("/api/sessions/:id/end", async (req, res) => {
 });
 
 /* ===========================
+   ✅ UPDATE CUSTOMER NAME
+=========================== */
+app.post("/api/sessions/:id/update-name", async (req, res) => {
+  try {
+
+    const { client_name } = req.body;
+
+    await pool.query(
+      `
+      UPDATE sessions
+      SET client_name = ?
+      WHERE id = ?
+      `,
+      [client_name, req.params.id]
+    );
+
+    res.json({ success: true });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      success: false
+    });
+  }
+});
+
+/* ===========================
    ✅ REMOVE EXPIRED SESSIONS
 =========================== */
 app.post("/api/sessions/remove-expired", async (req, res) => {

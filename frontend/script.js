@@ -135,18 +135,36 @@ let remain = Math.floor(
       else if (remain <= 300) status = "warning";
 
       html += `
-        <tr>
-          <td><strong>${s.client_name}</strong></td>
-          <td>${timeIn}</td>
-          <td>${timeOut}</td>
-          <td class="${status}">
-            ${duration >= 999 ? '<span class="badge unlimited">Unlimited</span>' : formatRemainingTime(remain)}
-          </td>
-          <td>
-            <button class="remove" onclick="removeSession(${s.id})">Remove</button>
-          </td>
-        </tr>
-      `;
+<tr>
+  <td>
+    <strong
+      style="cursor:pointer;"
+      onclick="editCustomerName(${s.id}, '${s.client_name}')"
+      title="Click to edit name"
+    >
+      ✏️ ${s.client_name}
+    </strong>
+  </td>
+
+  <td>${timeIn}</td>
+  <td>${timeOut}</td>
+
+  <td class="${status}">
+    ${
+      duration >= 999
+        ? '<span class="badge unlimited">Unlimited</span>'
+        : formatRemainingTime(remain)
+    }
+  </td>
+
+  <td>
+    <button class="remove"
+            onclick="removeSession(${s.id})">
+      Remove
+    </button>
+  </td>
+</tr>
+`;
     });
 
     tableBody.innerHTML = html;
@@ -199,6 +217,45 @@ async function removeExpiredSessions() {
     alert("Failed to remove expired sessions.");
   }
 }
+
+/* ==========================================
+   ✏️ EDIT CUSTOMER NAME
+========================================== */
+async function editCustomerName(id, currentName) {
+
+  const newName = prompt(
+    "Enter corrected customer name:",
+    currentName
+  );
+
+  if (!newName) return;
+
+  try {
+
+    const res = await fetch(
+      `/api/sessions/${id}/update-name`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          client_name: newName
+        })
+      }
+    );
+
+    const data = await res.json();
+
+    if (data.success) {
+      loadSessions();
+    }
+
+  } catch (err) {
+    console.error(err);
+  }
+}
+
 
 /* ==========================================
    📈 LOAD CHART
