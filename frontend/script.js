@@ -95,6 +95,7 @@ async function loadSessions() {
   try {
     const res = await fetch("/api/sessions/active");
     const data = await res.json();
+console.log("Sessions:", data);
  const tableBody = document.getElementById("tableBody");
     if (!tableBody) return;
 let html = "";
@@ -120,16 +121,6 @@ const expired = remain <= 0;
 if (remain < 0) {
   remain = 0;
 }
-/* FILTER LOGIC */
-if (filter === "unlimited" && duration < 999)
-  return;
-
-if (filter === "expired" && !expired)
-  return;
-
-if (filter === "active" && (expired || duration >= 999))
-  return;
-
       const timeIn = start.toLocaleTimeString("en-PH");
       let timeOut = "-";
 
@@ -147,18 +138,15 @@ if (filter === "active" && (expired || duration >= 999))
       html += `
 <tr>
 <td>
-
 <input
   type="text"
   class="editable-name"
   value="${s.client_name}"
   data-id="${s.id}"
   onchange="saveCustomerName(this)"
->
-
+/>
 </td>
-
-  <td>${timeIn}</td>
+ <td>${timeIn}</td>
   <td>${timeOut}</td>
 
   <td class="${status}">
@@ -168,8 +156,7 @@ if (filter === "active" && (expired || duration >= 999))
         : formatRemainingTime(remain)
     }
   </td>
-
-  <td>
+<td>
   <button class="extend"
         onclick="extendSession(${s.id}, 30)">
   +30m
@@ -187,6 +174,8 @@ if (filter === "active" && (expired || duration >= 999))
 </tr>
 `;
     });
+
+console.log("Generated HTML:", html);
 
     tableBody.innerHTML = html;
 
