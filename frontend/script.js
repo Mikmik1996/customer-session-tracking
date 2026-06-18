@@ -141,13 +141,14 @@ if (remain < 0) {
       html += `
 <tr>
 <td>
-  <strong
-    style="cursor:pointer; color:#1c7ed6;"
-    onclick="editCustomerName(${s.id}, '${s.client_name}')"
-    title="Click to edit name"
+  <span
+    class="editable-name"
+    contenteditable="true"
+    data-id="${s.id}"
+    onblur="saveCustomerName(this)"
   >
     ${s.client_name}
-  </strong>
+  </span>
 </td>
 
   <td>${timeIn}</td>
@@ -302,7 +303,41 @@ async function editCustomerName(id, currentName) {
     console.error(err);
   }
 }
+/* ==========================================
+   ✅ SAVE CUSTOMER NAME
+========================================== */
+async function saveCustomerName(element) {
 
+  const id = element.dataset.id;
+  const newName = element.textContent.trim();
+
+  if (!newName) return;
+
+  try {
+
+    const res = await fetch(
+      `/api/sessions/${id}/update-name`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          client_name: newName
+        })
+      }
+    );
+
+    const data = await res.json();
+
+    if (data.success) {
+      console.log("Customer name updated");
+    }
+
+  } catch (err) {
+    console.error(err);
+  }
+}
 
 /* ==========================================
    📈 LOAD CHART
