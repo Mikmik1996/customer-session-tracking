@@ -140,15 +140,16 @@ if (remain < 0) {
 
       html += `
 <tr>
-  <td>
-    <strong
-      style="cursor:pointer;"
-      onclick="editCustomerName(${s.id}, '${s.client_name}')"
-      title="Click to edit name"
-    >
-      ✏️ ${s.client_name}
-    </strong>
-  </td>
+<td>
+  <strong
+    style="cursor:pointer; color:#1c7ed6;"
+    onclick="editCustomerName(${s.id}, '${s.client_name}')"
+    title="Click to edit name"
+  >
+    ${s.client_name}
+  </strong>
+</td>
+
   <td>${timeIn}</td>
   <td>${timeOut}</td>
 
