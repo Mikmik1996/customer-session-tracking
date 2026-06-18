@@ -113,7 +113,11 @@ async function loadSessions() {
         case 5: duration = 999; break;
       }
 
-      let remain = (duration * 60) - ((now - start) / 1000);
+    
+let remain = Math.floor(
+  (duration * 60) - ((now - start) / 1000)
+);
+
       if (remain < 0) remain = 0;
 
       const timeIn = start.toLocaleTimeString("en-PH");
@@ -279,6 +283,6 @@ document.addEventListener("DOMContentLoaded", () => {
   loadSessions();
   showSection("registration");
 
-  setInterval(loadSessions, 2000);
+  setInterval(loadSessions, 1000);
 });
 
