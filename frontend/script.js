@@ -453,6 +453,15 @@ document.addEventListener("DOMContentLoaded", () => {
   loadSessions();
   showSection("registration");
 
-  setInterval(loadSessions, 30000);
-});
+  setInterval(() => {
 
+    const editing =
+      document.activeElement &&
+      document.activeElement.classList.contains("editable-name");
+
+    if (!editing) {
+      loadSessions();
+    }
+
+  }, 1000);
+});
