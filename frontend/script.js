@@ -245,12 +245,11 @@ async function extendSession(id, minutes) {
       }
     );
 
-    const data = await res.json();
-
-    if (data.success) {
-      loadSessions();
-    }
-
+    const data = await res.json();   
+if (data.success) {
+loadSessions();
+alert(`✅ Session extended by ${minutes} minutes`);
+}
   } catch (err) {
     console.error(err);
     alert("Failed to extend session.");
