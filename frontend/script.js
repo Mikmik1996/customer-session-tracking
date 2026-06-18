@@ -101,6 +101,7 @@ console.log("Sessions:", data);
 let html = "";
 const filter =
   document.getElementById("sessionFilter")?.value || "all";
+console.log("Current Filter:", filter);
   data.forEach(s => {
       const start = new Date(s.start_time);
       const now = new Date();
@@ -120,6 +121,18 @@ const expired = remain <= 0;
 
 if (remain < 0) {
   remain = 0;
+}
+
+if (filter === "unlimited") {
+  if (duration < 999) return;
+}
+
+if (filter === "expired") {
+  if (!expired) return;
+}
+
+if (filter === "active") {
+  if (expired || duration >= 999) return;
 }
       const timeIn = start.toLocaleTimeString("en-PH");
       let timeOut = "-";
