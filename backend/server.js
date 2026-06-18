@@ -135,11 +135,13 @@ app.get("/api/export", async (req, res) => {
 });
 
 /* ===========================
-   ✅ CHART DATA
+   ✅ CHART DATA WITH FILTER
 =========================== */
 app.get("/api/chart-data", async (req, res) => {
   try {
-    const [rows] = await pool.query(`
+    const { start, end } = req.query;
+
+    let query = `
       SELECT 
         CASE 
           WHEN package_id = 1 THEN '30 mins'
@@ -150,8 +152,22 @@ app.get("/api/chart-data", async (req, res) => {
         END AS package_name,
         COUNT(*) AS count
       FROM sessions
+    `;
+
+    const params = [];
+
+    if (start && end) {
+      query += `
+        WHERE DATE(start_time) BETWEEN ? AND ?
+      `;
+      params.push(start, end);
+    }
+
+    query += `
       GROUP BY package_id
-    `);
+    `;
+
+    const [rows] = await pool.query(query, params);
 
     res.json(rows);
 

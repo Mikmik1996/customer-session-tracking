@@ -167,50 +167,88 @@ async function removeSession(id) {
 }
 
 /* ==========================================
-   📈 LOAD CHART (NO SUMMARY)
+   📈 LOAD CHART
 ========================================== */
 let chart;
 
 async function loadChart() {
   const canvas = document.getElementById("chart");
-  if (!canvas) return;
 
-  const start = document.getElementById("startDate").value;
-  const end = document.getElementById("endDate").value;
+  if (!canvas) {
+    console.error("❌ Chart canvas not found");
+    return;
+  }
+
+  const start = document.getElementById("startDate")?.value || "";
+  const end = document.getElementById("endDate")?.value || "";
+
+  console.log("✅ Filter clicked");
+  console.log("Start Date:", start);
+  console.log("End Date:", end);
 
   let url = "/api/chart-data";
+
   if (start && end) {
     url += `?start=${start}&end=${end}`;
   }
 
+  console.log("✅ Final URL:", url);
+
   try {
     const res = await fetch(url);
+
+    console.log("✅ Status:", res.status);
+
     const data = await res.json();
 
+    console.log("✅ API Response:", data);
+
     const grouped = {};
+
     data.forEach(d => {
-      grouped[d.package_name] = (grouped[d.package_name] || 0) + d.count;
+      grouped[d.package_name] =
+        (grouped[d.package_name] || 0) + d.count;
     });
 
     const labels = Object.keys(grouped);
     const values = Object.values(grouped);
 
+    console.log("Labels:", labels);
+    console.log("Values:", values);
+
     const ctx = canvas.getContext("2d");
 
-    if (chart) chart.destroy();
+    if (chart) {
+      chart.destroy();
+    }
 
     chart = new Chart(ctx, {
       type: "bar",
       data: {
         labels: labels,
         datasets: [{
+          label: "Registered Customers",
           data: values,
-          backgroundColor: "#1c7ed6"
+          backgroundColor: "#1c7ed6",
+          borderRadius: 4
         }]
       },
       options: {
         responsive: true,
-        maintainAspectRatio: false
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: false
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              stepSize: 1
+            }
+          }
+        }
       }
     });
 
