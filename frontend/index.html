@@ -21,6 +21,16 @@
       background-size: cover;
     }
 
+.login-error {
+  color: #dc2626;
+  text-align: center;
+  margin-top: 10px;
+  min-height: 20px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+
     /* ✅ LOGIN CARD */
     .login-container {
       background: rgba(255, 255, 255, 0.95);
@@ -155,7 +165,7 @@
 
     <!-- ✅ BUTTON -->
     <button type="submit" id="loginBtn">Login</button>
-
+    <p id="loginError" class="login-error"></p>
   </form>
 
 </div>
@@ -176,15 +186,13 @@ function togglePassword() {
 
 async function login(e) {
   e.preventDefault();
-
-  const btn = document.getElementById("loginBtn");
+document.getElementById("loginError").textContent = "";
+const btn = document.getElementById("loginBtn");
   btn.innerText = "Logging in...";
   btn.disabled = true;
-
-  const username = document.getElementById("username").value;
+const username = document.getElementById("username").value;
   const password = document.getElementById("password").value;
-
-  try {
+try {
     const res = await fetch("/api/login", {
       method: "POST",
       headers: {
@@ -195,29 +203,36 @@ async function login(e) {
 
     const data = await res.json();
 
-    if (data.success) {
-      localStorage.setItem("isLoggedIn", "true");
+if (data.success) {
 
-      document.body.classList.add("fade-out");
+  localStorage.setItem("isLoggedIn", "true");
+  document.body.classList.add("fade-out");
 
-      setTimeout(() => {
-        window.location.href = "/dashboard.html";
-      }, 500);
+  setTimeout(() => {
+    window.location.href = "/dashboard.html";
+  }, 500);
 
-    } else {
-      alert("Invalid login (use admin / jump123)");
-      btn.innerText = "Login";
-      btn.disabled = false;
-    }
+} else {
 
-  } catch (err) {
-    console.error(err);
-    alert("Server error");
-    btn.innerText = "Login";
-    btn.disabled = false;
+  document.getElementById("loginError").textContent =
+    "Invalid username or password.";
+
+  btn.innerText = "Login";
+  btn.disabled = false;
+}
+
+} catch (err) {
+
+  console.error(err);
+
+  document.getElementById("loginError").textContent =
+    "Unable to connect. Please try again.";
+
+  btn.innerText = "Login";
+  btn.disabled = false;
+
   }
 }
 </script>
-
 </body>
 </html>
