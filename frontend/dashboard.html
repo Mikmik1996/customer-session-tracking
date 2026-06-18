@@ -267,6 +267,20 @@
       color: white;
     }
 
+.remove-expired {
+  background: #e03131;
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.remove-expired:hover {
+  background: #c92a2a;
+}
+
     /* ==========================================
        📈 ANALYTICS COMPONENT FILTER TOOLS
     ========================================== */
@@ -364,8 +378,15 @@
 
     <div id="dashboard" class="section">
       <h2>Dashboard</h2>
+
+<div style="margin-bottom:15px;">
+  <button class="remove-expired" onclick="removeExpiredSessions()">
+    Remove Expired Sessions
+  </button>
+</div>
       <table>
         <thead>
+
           <tr>
             <th>Customer Name</th>
             <th>Time-In</th>

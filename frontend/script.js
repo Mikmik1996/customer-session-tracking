@@ -170,6 +170,36 @@ async function removeSession(id) {
   }
 }
 
+async function removeExpiredSessions() {
+  if (
+    !confirm(
+      "Remove all sessions with remaining time 00:00:00?"
+    )
+  ) {
+    return;
+  }
+
+  try {
+    const res = await fetch(
+      "/api/sessions/remove-expired",
+      {
+        method: "POST"
+      }
+    );
+
+    const data = await res.json();
+
+    if (data.success) {
+      alert("✅ Expired sessions removed.");
+      loadSessions();
+    }
+
+  } catch (err) {
+    console.error(err);
+    alert("Failed to remove expired sessions.");
+  }
+}
+
 /* ==========================================
    📈 LOAD CHART
 ========================================== */

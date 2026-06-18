@@ -109,6 +109,36 @@ app.post("/api/sessions/:id/end", async (req, res) => {
 });
 
 /* ===========================
+   ✅ REMOVE EXPIRED SESSIONS
+=========================== */
+app.post("/api/sessions/remove-expired", async (req, res) => {
+  try {
+
+    await pool.query(`
+      UPDATE sessions
+      SET end_time = NOW()
+      WHERE end_time IS NULL
+      AND package_id <> 5
+      AND (
+        (package_id = 1 AND TIMESTAMPDIFF(MINUTE,start_time,NOW()) >= 30)
+        OR
+        (package_id = 2 AND TIMESTAMPDIFF(MINUTE,start_time,NOW()) >= 60)
+        OR
+        (package_id = 3 AND TIMESTAMPDIFF(MINUTE,start_time,NOW()) >= 90)
+        OR
+        (package_id = 4 AND TIMESTAMPDIFF(MINUTE,start_time,NOW()) >= 120)
+      )
+    `);
+
+    res.json({ success: true });
+
+  } catch (err) {
+    console.error("❌ Remove expired error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+/* ===========================
    ✅ EXPORT CSV
 =========================== */
 app.get("/api/export", async (req, res) => {
