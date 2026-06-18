@@ -113,15 +113,61 @@ app.post("/api/sessions/:id/end", async (req, res) => {
 =========================== */
 app.get("/api/export", async (req, res) => {
   try {
-    const [rows] = await pool.query(`
-      SELECT client_name, client_contact, start_time, end_time
-      FROM sessions
-    `);
+    const { start, end } = req.query;
 
-    let csv = "Name,Contact,Start Time,End Time\n";
+    let query = `
+      SELECT
+        DATE(start_time) AS session_date,
+        client_name,
+        client_contact,
+
+        CASE
+          WHEN package_id = 1 THEN '30 mins'
+          WHEN package_id = 2 THEN '1 hour'
+          WHEN package_id = 3 THEN '1.5 hours'
+          WHEN package_id = 4 THEN '2 hours'
+          ELSE 'Unlimited'
+        END AS package_name,
+
+        TIME_FORMAT(start_time, '%h:%i %p') AS time_in,
+
+        TIME_FORMAT(
+          CASE
+            WHEN package_id = 1 THEN DATE_ADD(start_time, INTERVAL 30 MINUTE)
+            WHEN package_id = 2 THEN DATE_ADD(start_time, INTERVAL 60 MINUTE)
+            WHEN package_id = 3 THEN DATE_ADD(start_time, INTERVAL 90 MINUTE)
+            WHEN package_id = 4 THEN DATE_ADD(start_time, INTERVAL 120 MINUTE)
+            ELSE end_time
+          END,
+          '%h:%i %p'
+        ) AS time_out
+
+      FROM sessions
+    `;
+
+    const params = [];
+
+    if (start && end) {
+      query += ` WHERE DATE(start_time) BETWEEN ? AND ? `;
+      params.push(start, end);
+    }
+
+    query += ` ORDER BY start_time DESC `;
+
+    const [rows] = await pool.query(query, params);
+
+    let csv =
+      "Date,Customer Name,Contact,Session Package,Time In,Time Out\n";
 
     rows.forEach(row => {
-      csv += `${row.client_name},${row.client_contact},${row.start_time},${row.end_time || ""}\n`;
+      csv +=
+`${row.session_date},
+${row.client_name},
+${row.client_contact || ""},
+${row.package_name},
+${row.time_in || ""},
+${row.time_out || ""}
+`.replace(/\n/g, ",").replace(/,$/, "") + "\n";
     });
 
     res.header("Content-Type", "text/csv");
