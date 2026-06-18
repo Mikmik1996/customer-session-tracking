@@ -142,11 +142,12 @@ if (remain < 0) {
 <tr>
 <td>
   <span
-    class="editable-name"
-    contenteditable="true"
-    data-id="${s.id}"
-    onblur="saveCustomerName(this)"
-  >
+  class="editable-name"
+  contenteditable="true"
+  data-id="${s.id}"
+  onfocus="document.execCommand('selectAll', false, null)"
+  onblur="saveCustomerName(this)"
+>
     ${s.client_name}
   </span>
 </td>
