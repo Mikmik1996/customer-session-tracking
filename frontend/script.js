@@ -141,15 +141,15 @@ if (remain < 0) {
       html += `
 <tr>
 <td>
-  <span
+
+<input
+  type="text"
   class="editable-name"
-  contenteditable="true"
+  value="${s.client_name}"
   data-id="${s.id}"
-  onfocus="document.execCommand('selectAll', false, null)"
-  onblur="saveCustomerName(this)"
+  onchange="saveCustomerName(this)"
 >
-    ${s.client_name}
-  </span>
+
 </td>
 
   <td>${timeIn}</td>
@@ -310,7 +310,7 @@ async function editCustomerName(id, currentName) {
 async function saveCustomerName(element) {
 
   const id = element.dataset.id;
-  const newName = element.textContent.trim();
+  const newName = element.value.trim();
 
   if (!newName) return;
 
@@ -453,6 +453,6 @@ document.addEventListener("DOMContentLoaded", () => {
   loadSessions();
   showSection("registration");
 
-  setInterval(loadSessions, 1000);
+  setInterval(loadSessions, 30000);
 });
 
