@@ -450,10 +450,19 @@ function downloadCSV() {
    🚦 INITIALIZE
 ========================================== */
 document.addEventListener("DOMContentLoaded", () => {
+
+  const today = new Date().toISOString().split("T")[0];
+
+  document.getElementById("startDate").value = today;
+  document.getElementById("endDate").value = today;
+
   loadSessions();
+  loadChart();
+
   showSection("registration");
 
   setInterval(() => {
+``
 
     const editing =
       document.activeElement &&
