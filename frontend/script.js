@@ -459,10 +459,21 @@ function downloadCSV() {
 ========================================== */
 document.addEventListener("DOMContentLoaded", () => {
 
-  const today = new Date().toISOString().split("T")[0];
+  const today = new Date();
 
-  document.getElementById("startDate").value = today;
-  document.getElementById("endDate").value = today;
+  document.getElementById("currentDate").textContent =
+    today.toLocaleDateString("en-PH", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric"
+    });
+
+  const todayString =
+    new Date().toISOString().split("T")[0];
+
+  document.getElementById("startDate").value = todayString;
+  document.getElementById("endDate").value = todayString;
 
   loadSessions();
   loadChart();
@@ -470,7 +481,6 @@ document.addEventListener("DOMContentLoaded", () => {
   showSection("registration");
 
   setInterval(() => {
-``
 
     const editing =
       document.activeElement &&
@@ -481,4 +491,5 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
   }, 1000);
+
 });
