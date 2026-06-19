@@ -73,6 +73,51 @@
   padding: 0 12px;
 }
 
+
+@media (max-width: 768px) {
+
+  .sidebar {
+    width: 100%;
+    height: auto;
+    position: relative;
+  }
+
+  .main-content {
+    margin-left: 0;
+    padding: 15px;
+  }
+
+  .dashboard-filter {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .dashboard-filter label,
+  .dashboard-filter select {
+    width: 100%;
+    max-width: 250px;
+  }
+
+  table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  .action-buttons {
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .action-buttons button {
+    width: 100%;
+  }
+
+  .section-title {
+    font-size: 1.6rem;
+  }
+}
+
     /* ==========================================
        📁 SIDEBAR NAVIGATION MENU PANELS
     ========================================== */
