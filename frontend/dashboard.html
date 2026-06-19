@@ -16,7 +16,6 @@
       background: #f4f6f9;
       height: 100vh;
       overflow-x: hidden;
-      overflow-y: auto;
 
     }
 
@@ -75,78 +74,11 @@
   padding: 0 12px;
 }
 
-@media (max-width: 768px) {
 
 body {
-  display: block;
-  height: auto;
-  overflow-y: auto;
+  min-width: 1200px;
 }
 
-.sidebar {
-  width: 100%;
-  height: auto;
-}
-
-.menu {
-  flex-direction: row;
-  flex-wrap: wrap;
-}
-
-.menu button {
-  width: 50%;
-}
-
-.content,
-.main-content {
-  margin-left: 0 !important;
-  width: 100%;
-  padding: 10px;
-  box-sizing: border-box;
-}
-
-
-  .sidebar {
-    width: 100%;
-    height: auto;
-    position: relative;
-  }
-
-  .main-content {
-    margin-left: 0;
-    padding: 15px;
-  }
-
-  .dashboard-filter {
-    justify-content: center;
-    flex-wrap: wrap;
-  }
-
-  .dashboard-filter label,
-  .dashboard-filter select {
-    width: 100%;
-    max-width: 250px;
-  }
-
-  table {
-    display: block;
-    overflow-x: auto;
-    white-space: nowrap;
-  }
-
-  .action-buttons {
-    flex-direction: column;
-    gap: 5px;
-  }
-
-  .action-buttons button {
-    width: 100%;
-  }
-
-  .section-title {
-    font-size: 1.6rem;
-  }
-}
 
     /* ==========================================
        📁 SIDEBAR NAVIGATION MENU PANELS
