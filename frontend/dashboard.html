@@ -15,7 +15,9 @@
       display: flex;
       background: #f4f6f9;
       height: 100vh;
-      overflow: hidden;
+      overflow-x: hidden;
+      overflow-y: auto;
+
     }
 
 .editable-name {
@@ -73,8 +75,36 @@
   padding: 0 12px;
 }
 
-
 @media (max-width: 768px) {
+
+body {
+  display: block;
+  height: auto;
+  overflow-y: auto;
+}
+
+.sidebar {
+  width: 100%;
+  height: auto;
+}
+
+.menu {
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+
+.menu button {
+  width: 50%;
+}
+
+.content,
+.main-content {
+  margin-left: 0 !important;
+  width: 100%;
+  padding: 10px;
+  box-sizing: border-box;
+}
+
 
   .sidebar {
     width: 100%;
