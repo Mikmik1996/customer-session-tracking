@@ -94,6 +94,21 @@ body {
   box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
+.active-sessions-card {
+  background: white;
+  padding: 10px 25px;
+  border-radius: 10px;
+  font-weight: bold;
+  color: #1c4fa3;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  font-size: 18px;
+}
+
+#activeCount {
+  color: #22c55e;
+  font-size: 22px;
+}
+
 
     /* ==========================================
        📁 SIDEBAR NAVIGATION MENU PANELS
@@ -481,6 +496,10 @@ body {
   <div class="dashboard-header">
 
     <div class="dashboard-date" id="currentDate"></div>
+
+<div class="active-sessions-card">
+    Active Sessions: <span id="activeCount">0</span>
+  </div>
 
     <div class="dashboard-filter">
       <label>Filter:</label>

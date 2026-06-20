@@ -95,60 +95,83 @@ async function loadSessions() {
   try {
     const res = await fetch("/api/sessions/active");
     const data = await res.json();
-console.log("Sessions:", data);
- const tableBody = document.getElementById("tableBody");
+
+    const tableBody = document.getElementById("tableBody");
     if (!tableBody) return;
-let html = "";
-const filter =
-  document.getElementById("sessionFilter")?.value || "all";
-console.log("Current Filter:", filter);
-  data.forEach(s => {
+
+    let html = "";
+    let activeCount = 0;
+
+    const filter =
+      document.getElementById("sessionFilter")?.value || "all";
+
+    data.forEach(s => {
+
       const start = new Date(s.start_time);
       const now = new Date();
 
       let duration = 30;
+
       switch (Number(s.package_id)) {
         case 2: duration = 60; break;
         case 3: duration = 90; break;
         case 4: duration = 120; break;
         case 5: duration = 999; break;
       }
-duration += Number(s.extension_minutes || 0);
-    let remain = Math.floor(
-  (duration * 60) - ((now - start) / 1000)
-);
-const expired = remain <= 0;
 
-if (remain < 0) {
-  remain = 0;
-}
+      duration += Number(s.extension_minutes || 0);
 
-if (filter === "unlimited") {
-  if (duration < 999) return;
-}
+      let remain = Math.floor(
+        (duration * 60) - ((now - start) / 1000)
+      );
 
-if (filter === "expired") {
-  if (!expired) return;
-}
+      const expired = remain <= 0;
 
-if (filter === "active") {
-  if (expired || duration >= 999) return;
-}
+      if (remain < 0) {
+        remain = 0;
+      }
+
+      /* COUNT ACTIVE SESSIONS */
+      if (!expired) {
+        activeCount++;
+      }
+
+      /* FILTER LOGIC */
+      if (filter === "unlimited") {
+        if (duration < 999) return;
+      }
+
+      if (filter === "expired") {
+        if (!expired) return;
+      }
+
+      if (filter === "active") {
+        if (expired || duration >= 999) return;
+      }
+
       const timeIn = start.toLocaleTimeString("en-PH");
+
       let timeOut = "-";
 
       if (duration < 999) {
-        const end = new Date(start.getTime() + duration * 60000);
+        const end = new Date(
+          start.getTime() + duration * 60000
+        );
         timeOut = end.toLocaleTimeString("en-PH");
       } else {
         timeOut = "Unlimited";
       }
 
       let status = "normal";
-      if (remain <= 0) status = "expired";
-      else if (remain <= 300) status = "warning";
+
+      if (remain <= 0) {
+        status = "expired";
+      } else if (remain <= 300) {
+        status = "warning";
+      }
 
       html += `
+
 <tr>
 <td>
 <input
@@ -185,10 +208,12 @@ if (filter === "active") {
   </button>
 </td>
 </tr>
-`;
+    `;
+    
     });
 
-console.log("Generated HTML:", html);
+    document.getElementById("activeCount").textContent =
+      activeCount;
 
     tableBody.innerHTML = html;
 
@@ -461,25 +486,35 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const today = new Date();
 
-  document.getElementById("currentDate").textContent =
-    today.toLocaleDateString("en-PH", {
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric"
-    });
+  /* Dashboard Date */
+  const currentDate = document.getElementById("currentDate");
 
+  if (currentDate) {
+    currentDate.textContent =
+      today.toLocaleDateString("en-PH", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric"
+      });
+  }
+
+  /* Reports Default Dates */
   const todayString =
-    new Date().toISOString().split("T")[0];
+    today.toISOString().split("T")[0];
 
-  document.getElementById("startDate").value = todayString;
-  document.getElementById("endDate").value = todayString;
+  const startDate = document.getElementById("startDate");
+  const endDate = document.getElementById("endDate");
+
+  if (startDate) startDate.value = todayString;
+  if (endDate) endDate.value = todayString;
 
   loadSessions();
   loadChart();
 
   showSection("registration");
 
+  /* Live Session Refresh */
   setInterval(() => {
 
     const editing =
